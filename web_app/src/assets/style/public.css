@@ -1,0 +1,362 @@
+/* ====== RESET RINGAN ====== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ====== LAYOUT GLOBAL PUBLIC ====== */
+
+.public-layout {
+    min-height: 100vh;
+    background: #111827;
+    /* abu gelap */
+    color: #e5e7eb;
+    /* teks terang */
+}
+
+.public-main {
+    padding-bottom: 3rem;
+}
+
+/* ====== NAVBAR ====== */
+
+.public-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #111827;
+    border-bottom: 1px solid #1f2937;
+}
+
+.public-navbar__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.public-navbar__brand {
+    cursor: pointer;
+}
+
+.public-navbar__brand .logo-text {
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: 0.06em;
+    color: #f9fafb;
+}
+
+.public-navbar__nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.public-navbar__nav .nav-link {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #e5e7eb;
+    /* <-- bikin teks kelihatan */
+}
+
+.public-navbar__nav .nav-link:hover {
+    color: #60a5fa;
+}
+
+.public-navbar__actions .btn {
+    font-size: 0.9rem;
+}
+
+/* ====== BUTTON ====== */
+
+.btn {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #2563eb;
+    border-color: #2563eb;
+}
+
+.btn-outline:hover {
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.btn-secondary {
+    background: #4b5563;
+    color: #ffffff;
+}
+
+.btn-secondary:hover {
+    background: #374151;
+}
+
+/* ====== SECTION UMUM ====== */
+
+.section {
+    padding: 4rem 1rem;
+}
+
+.section__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ====== HERO / APLIKASI SIGAP ====== */
+
+.section--hero {
+    min-height: calc(100vh - 60px);
+    /* kira-kira tinggi navbar */
+    display: flex;
+    align-items: center;
+}
+
+.section__inner--hero {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    align-items: center;
+}
+
+.hero__text {
+    flex: 1 1 340px;
+}
+
+.hero__text h1 {
+    font-size: 2.7rem;
+    margin-bottom: 1rem;
+    color: #f9fafb;
+}
+
+.hero__subtitle {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+}
+
+.hero__features {
+    margin: 0 0 1.5rem 1.1rem;
+    padding: 0;
+}
+
+.hero__features li {
+    margin-bottom: 0.25rem;
+    color: #e5e7eb;
+}
+
+.hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.hero__image {
+    flex: 1 1 280px;
+    display: flex;
+    justify-content: center;
+}
+
+.hero__image-preview {
+    max-width: 280px;
+    width: 100%;
+    border-radius: 1.75rem;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* ====== SECTION LAIN (TENTANG, PANDUAN, KONTAK) ====== */
+
+.section--about h2,
+.section--guide h2,
+.section--contact h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    color: #f9fafb;
+}
+
+.section--about p,
+.section--guide p,
+.section--contact p,
+.section--about li,
+.section--guide li {
+    color: #d1d5db;
+    line-height: 1.7;
+}
+
+.guide__steps {
+    margin-left: 1.1rem;
+}
+
+.section__inner--contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.contact__info,
+.contact__links {
+    flex: 1 1 320px;
+}
+
+.contact__links ul {
+    padding-left: 1.1rem;
+}
+
+.contact__links a {
+    color: #93c5fd;
+    text-decoration: none;
+}
+
+.contact__links a:hover {
+    text-decoration: underline;
+}
+
+.contact__admin-login {
+    margin-top: 1.5rem;
+}
+
+/* ====== FOOTER ====== */
+
+.public-footer {
+    border-top: 1px solid #1f2937;
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+/* ====== RESPONSIVE ====== */
+
+@media (max-width: 768px) {
+    .public-navbar__inner {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .public-navbar__nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .section {
+        padding: 3rem 1rem;
+    }
+
+    .section--hero {
+        padding-top: 1.5rem;
+        padding-bottom: 3rem;
+        min-height: auto;
+    }
+
+    .hero__text h1 {
+        font-size: 2.1rem;
+    }
+}
+
+
+.section--login-admin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 70px);
+}
+
+.section__inner--login {
+    display: flex;
+    justify-content: center;
+}
+
+.login-card {
+    background: #020617;
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.login-card h2 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #f9fafb;
+}
+
+.login-subtitle {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: #9ca3af;
+}
+
+.login-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.login-form label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.9rem;
+    color: #e5e7eb;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid #374151;
+    background: #020617;
+    color: #e5e7eb;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: #60a5fa;
+}
+
+.login-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+    color: #fecaca;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.login-success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid #22c55e;
+    color: #bbf7d0;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}

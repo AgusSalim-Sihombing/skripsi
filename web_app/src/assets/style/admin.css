@@ -1,0 +1,949 @@
+/* ====== LAYOUT DASHBOARD ====== */
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f3f4f6;
+}
+
+.admin-layout__content {
+    flex: 1;
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    margin-left: 230px;
+}
+
+/* ====== SIDEBAR ====== */
+
+.admin-sidebar {
+    width: 230px;
+    background: #ffffff;
+    /* PUTIH */
+    padding: 1.2rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    border-right: 1px solid #e5e7eb;
+    position: fixed;
+    height: 100vh;
+}
+
+/* logo bagian atas */
+.admin-sidebar__logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.4rem 0.8rem;
+}
+
+.admin-sidebar__logo-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: #111827;
+    color: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.admin-sidebar__logo-text .title {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.admin-sidebar__logo-text .subtitle {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* menu */
+
+.admin-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+/* item menu & logout punya style dasar sama */
+.admin-sidebar__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.8rem;
+    font-size: 0.92rem;
+    color: #111827;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.admin-sidebar__item:hover {
+    background: #f3f4f6;
+}
+
+.admin-sidebar__item--active {
+    background: #e5e7eb;
+}
+
+.admin-sidebar__icon {
+    font-size: 1.1rem;
+}
+
+/* tombol logout di bagian bawah */
+
+.admin-sidebar__item--logout {
+    margin-top: auto;
+    color: #b91c1c;
+}
+
+.admin-sidebar__item--logout:hover {
+    background: #fee2e2;
+}
+
+/* responsive dikit kalau layar sempit */
+@media (max-width: 900px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+    }
+
+    .admin-sidebar__nav {
+        flex-direction: row;
+        flex: 1;
+        margin-top: 0;
+    }
+
+    .admin-sidebar__item {
+        white-space: nowrap;
+    }
+
+    .admin-layout__content {
+        padding: 1rem;
+    }
+}
+
+.dashboard-header h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.6rem;
+    color: #111827;
+}
+
+.dashboard-header p {
+    margin: 0 0 1.5rem;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.dashboard-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.1rem 1.2rem;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+    border: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.dashboard-card__label {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.dashboard-card__value {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+
+/* ====== HALAMAN ZONA BAHAYA ====== */
+.zona-bahaya-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr);
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.zona-bahaya-map {
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    background: #ffffff;
+    overflow: hidden;
+}
+
+/* bagian yang khusus tinggi map */
+.zona-bahaya-map-inner {
+    height: 480px;
+}
+
+.zona-bahaya-map-inner .leaflet-container {
+    height: 100%;
+    width: 100%;
+}
+
+/* bar tombol mode di bawah map */
+.zona-map-modes {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.zona-map-modes__hint {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+
+.zona-bahaya-form {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
+}
+
+.zona-bahaya-form h2 {
+    margin: 0 0 0.3rem;
+}
+
+.zona-form .form-group {
+    margin-bottom: 0.75rem;
+}
+
+.zona-form label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+    color: #374151;
+}
+
+.zona-form input,
+.zona-form textarea,
+.zona-form select {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    font-size: 0.88rem;
+}
+
+.zona-form textarea {
+    resize: vertical;
+}
+
+.zona-form .form-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.zona-form .form-row .form-group {
+    flex: 1;
+}
+
+.zona-form-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.zona-table-wrapper {
+    max-height: 260px;
+    overflow: auto;
+}
+
+.zona-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.zona-table th,
+.zona-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.4rem 0.3rem;
+    text-align: left;
+}
+
+.zona-table th {
+    font-weight: 600;
+    color: #4b5563;
+}
+
+@media (max-width: 900px) {
+    .zona-bahaya-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .zona-bahaya-map {
+        height: 360px;
+    }
+}
+
+.zona-map-modes {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.zona-map-bottom-actions {
+    padding: 0.5rem 0.75rem 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+/* ==== FILTER FORM DI HALAMAN SEMUA ZONA ==== */
+.laporan-filter-form {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+}
+
+.laporan-filter-form .form-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.laporan-filter-form .form-group {
+    flex: 1;
+    min-width: 0;
+}
+
+.laporan-filter-form .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    /* abu tua, jelas */
+    margin-bottom: 0.25rem;
+}
+
+.laporan-filter-form .form-group input,
+.laporan-filter-form .form-group select {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    font-size: 0.85rem;
+    color: #111827;
+    /* teks gelap */
+    background: #ffffff;
+    /* dasar putih */
+}
+
+/* ==== TABLE SEMUA ZONA BAHAYA ==== */
+.zona-table-wrapper {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+}
+
+.zona-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    color: #111827;
+    /* ini penting: teks body jadi gelap */
+}
+
+.zona-table thead th {
+    font-weight: 600;
+    padding: 0.5rem 0.35rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.zona-table tbody td {
+    padding: 0.45rem 0.35rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.zona-table tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+/* Wrapper khusus halaman laporan cepat */
+.laporan-cepat-page {
+    padding-bottom: 1.5rem;
+}
+
+/* Card generik (bisa dipakai di halaman admin lain juga) */
+.card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    margin-bottom: 1rem;
+}
+
+.card--filter {
+    margin-top: 0.75rem;
+}
+
+.card--table {
+    margin-top: 0.5rem;
+}
+
+/* Title di dalam card */
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: black;
+}
+
+.section-subtitle {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* Form filter jadi rapi di grid */
+.laporan-cepat-page .filter-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem 1rem;
+    align-items: flex-end;
+}
+
+.laporan-cepat-page .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.laporan-cepat-page .form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+/* Styling input/select biar konsisten */
+.laporan-cepat-page input[type="text"],
+.laporan-cepat-page input[type="date"],
+.laporan-cepat-page select {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.55rem;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #111827;
+}
+
+.laporan-cepat-page input::placeholder {
+    color: #9ca3af;
+}
+
+.laporan-cepat-page input:focus,
+.laporan-cepat-page select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+/* Baris tanggal from/to */
+.laporan-cepat-page .form-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Tombol filter */
+.laporan-cepat-page .filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* Alert error */
+.alert.alert--error {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+/* Table wrapper */
+.table-header {
+    margin-bottom: 0.75rem;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.table-wrapper thead tr {
+    background: #f9fafb;
+}
+
+.table-wrapper th,
+.table-wrapper td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+.table-wrapper tbody tr:hover {
+    background: #f3f4f6;
+}
+
+/* Empty state (kalau belum ada data) */
+.empty-state {
+    padding: 0.75rem 0.25rem;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.laporan-cepat-detail-page {
+    padding-bottom: 1.5rem;
+    color: rgb(90, 90, 90);
+}
+
+.laporan-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr);
+    gap: 1rem;
+}
+
+@media (max-width: 900px) {
+    .laporan-detail-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.laporan-detail-card .laporan-detail-status {
+    margin: 0.25rem 0 0.75rem;
+    font-size: 0.9rem;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge--status {
+    text-transform: capitalize;
+}
+
+.badge--pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge--review {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.badge--approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge--rejected {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.laporan-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.5rem 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.detail-row--full {
+    flex-direction: column;
+    margin-top: 0.5rem;
+}
+
+.detail-label {
+    font-weight: bold;
+    color: #000000;
+}
+
+.detail-description {
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    color: #111827;
+}
+
+.laporan-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.laporan-detail-side .laporan-detail-photo img {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    object-fit: cover;
+    max-height: 280px;
+}
+
+.photo-hint {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+/* Voting bar */
+.voting-bar {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+    display: flex;
+}
+
+.voting-bar__fill {
+    height: 100%;
+}
+
+.voting-bar__fill--setuju {
+    background: #22c55e;
+}
+
+.voting-bar__fill--tidak {
+    background: #ef4444;
+}
+
+.voting-legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #374151;
+}
+
+/* alert success */
+.alert.alert--success {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+/* area konten admin */
+.admin-page {
+    background-color: #f9fafb;
+    /* putih-abu */
+    min-height: 100vh;
+    padding: 24px 24px 32px;
+}
+
+/* khusus halaman user detail */
+.user-detail-page h1 {
+    font-size: 1.6rem;
+    margin-bottom: 0.25rem;
+}
+
+.user-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.user-detail-header p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.link-back {
+    border: none;
+    background: none;
+    padding: 0;
+    margin-bottom: 4px;
+    color: #2563eb;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.link-back:hover {
+    text-decoration: underline;
+}
+
+/* badge status & role */
+.user-detail-header__badges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-end;
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.pill--role {
+    background-color: #eef2ff;
+    color: #4338ca;
+}
+
+.pill--status {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+/* warna status */
+.pill--pending {
+    background-color: #fef9c3;
+    color: #92400e;
+}
+
+.pill--verified {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.pill--rejected {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+/* card umum */
+.card-elevated {
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.card-header-simple {
+    padding: 12px 18px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header-simple h5 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.card-body {
+    padding: 16px 18px 18px;
+}
+
+/* detail list */
+.user-detail-dl {
+    margin: 0;
+}
+
+.user-detail-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+.user-detail-row dt {
+    min-width: 130px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.user-detail-row dd {
+    margin: 0;
+    color: #111827;
+}
+
+/* KTP section */
+.ktp-section {
+    text-align: center;
+}
+
+.ktp-preview {
+    margin: 0 auto 0.75rem;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.ktp-preview--large {
+    width: 260px;
+    height: 170px;
+}
+
+.ktp-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+
+.ktp-caption {
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+
+/* loading */
+.user-detail-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+/* actions */
+.user-detail-actions {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* responsive */
+@media (max-width: 768px) {
+    .user-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .user-detail-header__badges {
+        flex-direction: row;
+    }
+
+    .ktp-preview--large {
+        width: 100%;
+    }
+
+    .user-detail-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+}
+
+.dashboard-map-card {
+    margin-top: 18px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-map-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.dashboard-map-card__sub {
+    margin: 6px 0 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.dashboard-map-card__badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.badge {
+    background: #f2f2f2;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge--pending {
+    background: #fff3cd;
+}
+
+.badge--approved {
+    background: #d1e7dd;
+}
+
+.dashboard-map-wrapper {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #eee;
+}
+
+.dashboard-map {
+    width: 100%;
+    height: 420px;
+    /* bisa kamu gedein */
+}
+
+.dashboard-map-loading {
+    height: 420px;
+    display: grid;
+    place-items: center;
+    color: #666;
+    background: #fafafa;
+}
