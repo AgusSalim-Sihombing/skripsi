@@ -1,10 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:mobile_app/pages/landing_page.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_app/services/socket_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'citizen_panic_detail_page.dart';
-import 'dart:async';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+import 'citizen_panic_detail_page.dart';
 
 class PanicWaitingPage extends StatefulWidget {
   final String token;
@@ -30,23 +32,22 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
   @override
   void initState() {
     super.initState();
-    _checkStatusOnce();
-    // polling tiap 2 detik
+
+    // polling tiap 2 detik (fallback kalau socket miss)
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _checkStatusOnce();
     });
+    _checkStatusOnce();
 
     _socket.connect(baseUrl: widget.baseUrl, token: widget.token);
 
-    // ✅ debug penting banget
     _socket.on("socket:ready", (d) {
       debugPrint("✅ [citizen socket ready] $d");
       if (!mounted) return;
       setState(() => _statusText = "✅ Tersambung. Menunggu officer respon...");
     });
 
-    // socket_io_client event default
     _socket.on("connect_error", (e) {
       debugPrint("❌ [citizen connect_error] $e");
       if (!mounted) return;
@@ -61,24 +62,12 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
       );
     });
 
-    // optional event (kalau backend emit)
-    _socket.on("panic:waiting", (payload) {
-      final data = Map<String, dynamic>.from(payload);
-      final pid = (data["panicId"] as num?)?.toInt();
-      if (pid == widget.panicId && mounted) {
-        setState(
-          () => _statusText = (data["message"] ?? _statusText).toString(),
-        );
-      }
-    });
-
-    // ✅ event utama
+    // event utama
     _socket.on("panic:responded", (payload) async {
       final data = Map<String, dynamic>.from(payload);
 
       final pidRaw = data["panicId"];
       final pid = (pidRaw is num) ? pidRaw.toInt() : int.tryParse("$pidRaw");
-
       if (pid == null || pid != widget.panicId) return;
 
       final officer = Map<String, dynamic>.from(data["officer"]);
@@ -87,6 +76,8 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
       await prefs.setInt("active_panic_id", pid);
 
       if (!mounted) return;
+
+      _pollTimer?.cancel();
 
       Navigator.pushReplacement(
         context,
@@ -101,17 +92,34 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
       );
     });
 
+    // officer selesai -> balik home
     _socket.on("panic:resolved", (payload) async {
       final data = Map<String, dynamic>.from(payload);
-      final pid = (data["panicId"] as num?)?.toInt();
-      if (pid != widget.panicId) return;
+      final pidRaw = data["panicId"];
+      final pid = (pidRaw is num) ? pidRaw.toInt() : int.tryParse("$pidRaw");
+      if (pid == null || pid != widget.panicId) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove("active_panic_id");
-
-      if (!mounted) return;
-      Navigator.pop(context);
+      await _goLanding();
     });
+  }
+
+  Future<void> _goLanding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("active_panic_id");
+    final username = prefs.getString("username") ?? "User";
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => LandingPage(
+          username: username,
+          token: widget.token,
+          baseUrl: widget.baseUrl,
+        ),
+      ),
+      (route) => false,
+    );
   }
 
   Future<void> _checkStatusOnce() async {
@@ -132,10 +140,15 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
       if (!mounted) return;
 
       if (status == "ASSIGNED") {
+        // ✅ bawa lastLat/lastLng dari API biar citizen map langsung hidup
         final officer = {
           "id": json["assignedOfficerId"],
           "nama": json["assignedOfficerName"],
+          "lastLat": json["officerLastLat"],
+          "lastLng": json["officerLastLng"],
         };
+
+        _pollTimer?.cancel();
 
         Navigator.pushReplacement(
           context,
@@ -149,7 +162,12 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
           ),
         );
       } else if (status == "RESOLVED") {
-        Navigator.pop(context);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove("active_panic_id");
+
+        _pollTimer?.cancel();
+        if (!mounted) return;
+        Navigator.popUntil(context, (route) => route.isFirst);
       }
     } catch (_) {}
   }
@@ -157,7 +175,13 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
   @override
   void dispose() {
     _pollTimer?.cancel();
-    _socket.disconnect();
+
+    _socket.off("socket:ready");
+    _socket.off("connect_error");
+    _socket.off("disconnect");
+    _socket.off("panic:responded");
+    _socket.off("panic:resolved");
+
     super.dispose();
   }
 

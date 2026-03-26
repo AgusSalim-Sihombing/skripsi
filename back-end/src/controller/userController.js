@@ -1,5 +1,5 @@
 const userModel = require("../models/userModel");
-const officerAppModel = require("../models/officerApplicationModel");
+// const officerAppModel = require("../models/officerApplicationModel");
 const db = require("../config/database");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -36,6 +36,92 @@ const getFileBuffer = (files, fieldName) => {
   return null;
 };
 
+// const createUser = async (req, res) => {
+//   try {
+//     console.log("[/register] body:", req.body);
+//     console.log("[/register] files:", req.files);
+
+//     const {
+//       nik,
+//       nama,
+//       alamat,
+//       username,
+//       password,
+//       phone,
+//       tempat_lahir,
+//       tanggal_lahir,
+//       email,
+//       role_request, // 'masyarakat' / 'officer'
+//       nrp,
+//       pangkat,
+//       satuan,
+//     } = req.body;
+
+//     if (!nik || !nama || !username || !password) {
+//       return res
+//         .status(400)
+//         .json({ message: "Field wajib masih ada yang kosong" });
+//     }
+
+//     // hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // KTP image (dari upload.fields atau single)
+//     let ktpBuffer = getFileBuffer(req.files, "ktp_image");
+//     if (!ktpBuffer && req.file) {
+//       // fallback kalau masih pakai upload.single
+//       ktpBuffer = req.file.buffer;
+//     }
+
+//     // bukti officer (opsional)
+//     const buktiOfficerBuffer = getFileBuffer(req.files, "bukti_officer");
+
+//     // semua user baru default role 'masyarakat'
+//     const baseRole = "masyarakat";
+
+//     const newUserData = {
+//       nik,
+//       nama,
+//       alamat,
+//       username,
+//       password: hashedPassword,
+//       phone,
+//       tempat_lahir,
+//       tanggal_lahir,
+//       email,
+//       role: baseRole,
+//     };
+
+//     // 1) simpan user
+//     const userId = await userModel.createUser(newUserData, ktpBuffer);
+
+//     // 2) kalau dia daftar sebagai officer → simpan ke officer_applications
+//     if (role_request === "officer") {
+//       await officerAppModel.createOfficerApplication(
+//         userId,
+//         { nrp, pangkat, satuan },
+//         buktiOfficerBuffer
+//       );
+//     }
+
+//     return res.status(201).json({
+//       success: true,
+//       message:
+//         role_request === "officer"
+//           ? "Registrasi berhasil. Pengajuan officer akan direview admin."
+//           : "User created successfully",
+//       data: {
+//         id: userId,
+//         role: baseRole,
+//         role_request: role_request || "masyarakat",
+//       },
+//     });
+//   } catch (err) {
+//     console.error("[/register] error:", err);
+//     return res.status(500).json({ message: err.message });
+//   }
+// };
+
 const createUser = async (req, res) => {
   try {
     console.log("[/register] body:", req.body);
@@ -63,21 +149,41 @@ const createUser = async (req, res) => {
         .json({ message: "Field wajib masih ada yang kosong" });
     }
 
+    const selectedRole =
+      role_request === "officer" ? "officer" : "masyarakat";
+
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // KTP image (dari upload.fields atau single)
+    // ambil file KTP
     let ktpBuffer = getFileBuffer(req.files, "ktp_image");
     if (!ktpBuffer && req.file) {
-      // fallback kalau masih pakai upload.single
       ktpBuffer = req.file.buffer;
     }
 
-    // bukti officer (opsional)
+    if (!ktpBuffer) {
+      return res.status(400).json({
+        message: "Foto KTP wajib diupload",
+      });
+    }
+
+    // ambil file bukti officer
     const buktiOfficerBuffer = getFileBuffer(req.files, "bukti_officer");
 
-    // semua user baru default role 'masyarakat'
-    const baseRole = "masyarakat";
+    // validasi khusus officer
+    if (selectedRole === "officer") {
+      if (!nrp || !pangkat || !satuan) {
+        return res.status(400).json({
+          message: "NRP, pangkat, dan satuan wajib diisi untuk officer",
+        });
+      }
+
+      if (!buktiOfficerBuffer) {
+        return res.status(400).json({
+          message: "Bukti officer wajib diupload",
+        });
+      }
+    }
 
     const newUserData = {
       nik,
@@ -89,31 +195,27 @@ const createUser = async (req, res) => {
       tempat_lahir,
       tanggal_lahir,
       email,
-      role: baseRole,
+      role: selectedRole,
+      nrp: selectedRole === "officer" ? nrp : null,
+      pangkat: selectedRole === "officer" ? pangkat : null,
+      satuan: selectedRole === "officer" ? satuan : null,
     };
 
-    // 1) simpan user
-    const userId = await userModel.createUser(newUserData, ktpBuffer);
-
-    // 2) kalau dia daftar sebagai officer → simpan ke officer_applications
-    if (role_request === "officer") {
-      await officerAppModel.createOfficerApplication(
-        userId,
-        { nrp, pangkat, satuan },
-        buktiOfficerBuffer
-      );
-    }
+    const userId = await userModel.createUser(
+      newUserData,
+      ktpBuffer,
+      selectedRole === "officer" ? buktiOfficerBuffer : null
+    );
 
     return res.status(201).json({
       success: true,
       message:
-        role_request === "officer"
-          ? "Registrasi berhasil. Pengajuan officer akan direview admin."
-          : "User created successfully",
+        selectedRole === "officer"
+          ? "Registrasi officer berhasil. Menunggu verifikasi admin."
+          : "Registrasi masyarakat berhasil.",
       data: {
         id: userId,
-        role: baseRole,
-        role_request: role_request || "masyarakat",
+        role: selectedRole,
       },
     });
   } catch (err) {
@@ -197,7 +299,7 @@ const loginUser = async (req, res) => {
 
     const token = jwt.sign(payload, USER_JWT_SECRET, {
       expiresIn: "7d",
-    });
+    }); 
 
     return res.json({
       message: "Login berhasil",

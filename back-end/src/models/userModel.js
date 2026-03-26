@@ -11,24 +11,79 @@ const getUserById = async (id) => {
   return rows[0];
 };
 
-const createUser = async (data, ktpBuffer) => {
+// const createUser = async (data, ktpBuffer) => {
+//   const {
+//     nik,
+//     nama,
+//     alamat,
+//     username,
+//     password,       // sudah dalam bentuk HASH dari controller
+//     phone,
+//     tempat_lahir,
+//     tanggal_lahir,
+//     email,
+//     role,
+//   } = data;
+
+//   const [result] = await db.execute(
+//     `INSERT INTO user
+//       (nik, nama, alamat, username, password, phone, tempat_lahir, tanggal_lahir, email, ktp_image, role)
+//      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
+//     [
+//       nik,
+//       nama,
+//       alamat,
+//       username,
+//       password,
+//       phone || null,
+//       tempat_lahir || null,
+//       tanggal_lahir || null,
+//       email || null,
+//       ktpBuffer || null,
+//       role || "masyarakat",
+//     ]
+//   );
+
+//   return result.insertId;
+// };
+
+const createUser = async (data, ktpBuffer, buktiOfficerBuffer) => {
   const {
     nik,
     nama,
     alamat,
     username,
-    password,       // sudah dalam bentuk HASH dari controller
+    password,
     phone,
     tempat_lahir,
     tanggal_lahir,
     email,
     role,
+    nrp,
+    pangkat,
+    satuan,
   } = data;
 
   const [result] = await db.execute(
     `INSERT INTO user
-      (nik, nama, alamat, username, password, phone, tempat_lahir, tanggal_lahir, email, ktp_image, role)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
+      (
+        nik,
+        nama,
+        alamat,
+        username,
+        password,
+        phone,
+        tempat_lahir,
+        tanggal_lahir,
+        email,
+        ktp_image,
+        role,
+        nrp,
+        pangkat,
+        satuan,
+        bukti_officer
+      )
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       nik,
       nama,
@@ -41,6 +96,10 @@ const createUser = async (data, ktpBuffer) => {
       email || null,
       ktpBuffer || null,
       role || "masyarakat",
+      nrp || null,
+      pangkat || null,
+      satuan || null,
+      buktiOfficerBuffer || null,
     ]
   );
 
@@ -60,10 +119,43 @@ const deleteUser = async (id) => {
   await db.execute("DELETE FROM user WHERE id = ?", [id]);
 };
 
+// const getUsersAdmin = async ({ role, search, status_verifikasi }) => {
+//   let sql = `
+//     SELECT 
+//       id, nik, nama, username, phone, email, role,
+//       status_verifikasi, catatan_verifikasi, created_at
+//     FROM user
+//     WHERE 1=1
+//   `;
+//   const params = [];
+
+//   if (role) {
+//     sql += " AND role = ?";
+//     params.push(role);
+//   }
+
+//   if (status_verifikasi) {
+//     sql += " AND status_verifikasi = ?";
+//     params.push(status_verifikasi);
+//   }
+
+//   if (search) {
+//     sql +=
+//       " AND (nama LIKE ? OR nik LIKE ? OR username LIKE ? OR email LIKE ?)";
+//     const like = `%${search}%`;
+//     params.push(like, like, like, like);
+//   }
+
+//   sql += " ORDER BY created_at DESC";
+
+//   const [rows] = await db.execute(sql, params);
+//   return rows;
+// };
 const getUsersAdmin = async ({ role, search, status_verifikasi }) => {
   let sql = `
     SELECT 
       id, nik, nama, username, phone, email, role,
+      nrp, pangkat, satuan,
       status_verifikasi, catatan_verifikasi, created_at
     FROM user
     WHERE 1=1
@@ -82,9 +174,9 @@ const getUsersAdmin = async ({ role, search, status_verifikasi }) => {
 
   if (search) {
     sql +=
-      " AND (nama LIKE ? OR nik LIKE ? OR username LIKE ? OR email LIKE ?)";
+      " AND (nama LIKE ? OR nik LIKE ? OR username LIKE ? OR email LIKE ? OR nrp LIKE ?)";
     const like = `%${search}%`;
-    params.push(like, like, like, like);
+    params.push(like, like, like, like, like);
   }
 
   sql += " ORDER BY created_at DESC";
@@ -111,9 +203,12 @@ const updateUserAdmin = async (id, data) => {
     "tanggal_lahir",
     "email",
     "role",
+    "nrp",
+    "pangkat",
+    "satuan",
     "status_verifikasi",
     "catatan_verifikasi",
-    "password", // sudah dalam bentuk hash
+    "password",
   ];
 
   for (const key of allowed) {
@@ -142,10 +237,12 @@ const getUserMe = async (id) => {
     SELECT 
       id, nik, nama, tempat_lahir, tanggal_lahir, alamat, phone, email,
       username, role,
+      nrp, pangkat, satuan,
       status_verifikasi, catatan_verifikasi,
       created_at, updated_at,
       (ktp_image IS NOT NULL) AS has_ktp_image,
-      (foto IS NOT NULL) AS has_foto
+      (foto IS NOT NULL) AS has_foto,
+      (bukti_officer IS NOT NULL) AS has_bukti_officer
     FROM user
     WHERE id = ?
     `,
@@ -214,7 +311,7 @@ module.exports = {
   getUsersAdmin,
   updateUserAdmin,
 
-  
+
   // mobile profile
   getUserMe,
   updateUserMe,

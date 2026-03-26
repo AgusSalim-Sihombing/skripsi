@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const authUser = require("../middleware/authUser");
 const uploadLaporanCepatFoto = require("../middleware/uploadLaporanCepatFoto");
-const { createLaporanCepatMobile, getMyLaporanCepatMobile, } = require("../controller/mobile/laporanCepatMobileController");
+const { createLaporanCepatMobile, getMyLaporanCepatMobile,getLaporanCepatFotoMobile } = require("../controller/mobile/laporanCepatMobileController");
 
 // middleware auth user (kalau sudah ada)
 // const authUser = require("../middleware/authUser");
@@ -16,7 +16,7 @@ router.post(
     createLaporanCepatMobile
 );
 router.get("/laporan-cepat/me", authUser, getMyLaporanCepatMobile);
-
+router.get("/laporan-cepat/:id/foto", authUser, getLaporanCepatFotoMobile);
 // kalau BELUM ada authUser, sementara bisa:
 //// router.post("/laporan-cepat", uploadLaporanCepatFoto, createLaporanCepatMobile);
 

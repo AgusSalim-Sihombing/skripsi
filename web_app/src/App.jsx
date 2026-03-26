@@ -13,8 +13,8 @@ import AdminLoginPage from "./modules/public/components/pages/AdminLoginPage";
 // import AdminLaporanCepatDetailPage from "./modules/admin/components/pages/AdminLaporanCepatMapDetailPage";
 import ZonaBahayaPage from "./modules/admin/components/pages/ZonaBahayaPage";
 import ZonaBahayaListPage from "./modules/admin/components/pages/ZonaBahayaListPage";
-import AdminLaporanCepatListPage from "./modules/admin/components/pages/AdminLaporanCepatListPage";
-import AdminLaporanCepatDetailPage from "./modules/admin/components/pages/AdminLaporanCepatDetailPage";
+import AdminLaporanCepatListPage from "./modules/admin/components/pages/admin_laporan_cepat/AdminLaporanCepatListPage";
+import AdminLaporanCepatDetailPage from "./modules/admin/components/pages/admin_laporan_cepat/AdminLaporanCepatDetailPage";
 import AdminUserMasyarakatPage from "./modules/admin/components/pages/admin_user/AdminUserMasyarakatPage";
 import AdminOfficerPage from "./modules/admin/components/pages/admin_user/AdminOfficerPage";
 import AdminUserDetailPage from "./modules/admin/components/pages/admin_user/AdminUserDetailPage";
@@ -25,6 +25,7 @@ import AdminPanicAlertListPage from "./modules/admin/components/pages/panic_aler
 import AdminPanicAlertDetailPage from "./modules/admin/components/pages/panic_alert/AdminPanicAlertDetailPage";
 import AdminKomunitasListPage from "./modules/admin/components/pages/admin_komunitas/admin_komunitas_list_page";
 import AdminKomunitasDetailPage from "./modules/admin/components/pages/admin_komunitas/admin_komunitas_detail_page";
+import ZonaBahayaDetailPage from "./modules/admin/components/pages/ZonaBahayaDetailPage";
 
 
 
@@ -47,6 +48,7 @@ function App() {
         {/* <Route path="/admin/laporan-cepat/map" element={<AdminLaporanCepatMapPage />} />
         <Route path="/admin/laporan-cepat/:id" element={<AdminLaporanCepatDetailPage />} /> */}
         <Route path="/admin/zona-bahaya/semua" element={<ZonaBahayaListPage />} />
+        <Route path="/admin/zona-bahaya/semua/:id" element={<ZonaBahayaDetailPage />} />
         <Route path="/admin/laporan-kepolisian" element={<AdminLaporanKepolisianListPage />} />
         <Route path="/admin/laporan-kepolisian/:id" element={<AdminLaporanKepolisianDetailPage />} />
 

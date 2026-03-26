@@ -280,7 +280,7 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
         decoration: InputDecoration(
           labelText: label ?? key,
           filled: true,
-          fillColor: const Color.fromARGB(255, 255, 255, 255),
+          // fillColor: const Color.fromARGB(255, 255, 255, 255),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
@@ -303,7 +303,7 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            // color: Colors.grey[100],
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -336,7 +336,7 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
         decoration: InputDecoration(
           labelText: label,
           filled: true,
-          fillColor: Colors.grey[100],
+          // fillColor: Colors.grey[100],
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
@@ -372,7 +372,7 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    // color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(14),
                     border: state.hasError
                         ? Border.all(color: Colors.red.withOpacity(0.8))
@@ -431,7 +431,7 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    // color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(14),
                     border: state.hasError
                         ? Border.all(color: Colors.red.withOpacity(0.8))
@@ -467,10 +467,11 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 194, 194, 194),
+      // backgroundColor: const Color.fromARGB(255, 194, 194, 194),
       appBar: AppBar(
         title: const Text("Buat Laporan Kepolisian"),
-        backgroundColor: const Color(0xFF8B5A24),
+        // backgroundColor: const Color(0xFF8B5A24),
+        centerTitle: true,
       ),
       body: Form(
         key: _formKey,

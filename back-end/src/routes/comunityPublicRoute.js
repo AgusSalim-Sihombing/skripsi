@@ -99,11 +99,19 @@ router.post(
 );
 
 // messages
+// router.get(
+//     "/communities/:id/messages",
+//     authUser,
+//     requireVerifiedMasyarakat,
+//     mustCommunityActive,
+//     mustMemberApproved,
+//     C.getMessages
+// );
+
 router.get(
     "/communities/:id/messages",
     authUser,
     requireVerifiedMasyarakat,
-    mustCommunityActive,
     mustMemberApproved,
     C.getMessages
 );

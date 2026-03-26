@@ -1,24 +1,402 @@
-table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
+/* Container Utama */
+.panic-page-container {
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+}
+
+/* Header */
+.panic-page-header {
+  margin-bottom: 24px;
+}
+
+.panic-header-content h1 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.panic-header-content p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Filter Card */
+.panic-page-filter-card {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.panic-filter-wrapper {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.panic-input-select {
+  padding: 10px 16px;
+  border: 1px solid #b1b1b1;
+  border-radius: 8px;
+  outline: none;
+  min-width: 180px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.315);
   color: black;
 }
 
-td, th {
-  border: 1px solid #dddddd;
+.panic-search-group {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  min-width: 300px;
+}
+
+.panic-input-text {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #acacac;
+  border-radius: 8px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.315);
+  color: black;
+}
+
+.panic-input-text:focus {
+  border-color: #225af3;
+  /* Merah untuk kesan Panic Alert */
+  box-shadow: 0 0 0 3px rgba(43, 146, 255, 0.1);
+}
+
+.panic-btn-search {
+  background: #0f172a;
+  color: white;
+  padding: 0 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Table Card */
+.panic-table-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.panic-custom-table {
+  width: 100%;
+  border-collapse: collapse;
   text-align: left;
-  padding: 8px;
 }
 
-tr:nth-child(even) {
-  background-color: #dddddd;
+.panic-custom-table th {
+  background: #f1f5f9;
+  padding: 14px 20px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #000000;
 }
 
-.dashboard-map-card{
-    color: black;
+.panic-custom-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
 }
 
-.dashboard-map-card__sub{
-    font-weight:bold ;
+/* Badges */
+.panic-badge {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.panic-badge-open {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.panic-badge-assigned {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.panic-badge-resolved {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+/* User Info */
+.panic-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.panic-user-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.panic-user-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.panic-unassigned {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* Buttons */
+.panic-btn-detail {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.panic-btn-detail:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* Loading State */
+.panic-loading-state {
+  text-align: center;
+  padding: 50px;
+  color: #64748b;
+}
+
+.panic-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #ef4444;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animasi Berkedip */
+@keyframes panic-blink {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Class khusus untuk teks yang menunggu petugas */
+.panic-unassigned-blink {
+  color: #ef4444;
+  /* Warna merah agar mencolok */
+  font-weight: 700;
+  font-style: italic;
+  font-size: 13px;
+  animation: panic-blink 1s infinite;
+  /* Berkedip setiap 1 detik selamanya */
+}
+
+.panic-time-info {
+  color: black;
+}
+
+.panic-td-id {
+  color: black;
+}
+
+.panic-detail-container {
+  padding: 24px;
+  background: #f8fafc;
+}
+
+.panic-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.panic-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  color: #1e293b;
+}
+
+.panic-status-badge {
+  padding: 6px 16px;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.status-open {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-assigned {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-resolved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.panic-btn-back {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Info Cards */
+.panic-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.panic-info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-top: 5px solid #cbd5e1;
+}
+
+.citizen-border {
+  border-top-color: #d90429;
+}
+
+.officer-border {
+  border-top-color: #1d4ed8;
+}
+
+.timeline-border {
+  border-top-color: #6366f1;
+}
+
+.card-icon-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.card-icon-header h4 {
+  margin: 0;
+  color: #475569;
+}
+
+.info-row {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.mini-table td {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+/* Map Section */
+.panic-map-section {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-container-custom {
+  height: 450px;
+  width: 100%;
+  border-radius: 8px;
+  z-index: 1;
+}
+
+/* Dispatch Table */
+.panic-dispatch-section {
+  margin-top: 24px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  color: black;
+}
+
+.panic-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.panic-table th {
+  text-align: left;
+  background: #f1f5f9;
+  padding: 12px;
+}
+
+.panic-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Sembunyikan kotak instruksi rute yang muncul di pojok peta */
+.leaflet-routing-container {
+  display: none !important;
+}
+
+/* Opsional: Jika ingin garis rute terlihat lebih smooth */
+.leaflet-routing-alt {
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.mini-table {
+  color: black;
+}
+
+.map-card-header {
+  color: black;
 }

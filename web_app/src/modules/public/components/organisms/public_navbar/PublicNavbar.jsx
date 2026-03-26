@@ -1,20 +1,24 @@
 // src/modules/public/components/organisms/PublicNavbar/PublicNavbar.jsx
 import React from "react";
 import { Link } from "react-router-dom";
+import "../../pages/HomePublicPage.css";
 
 const PublicNavbar = () => {
     const scrollToSection = (id) => {
         const el = document.getElementById(id);
         if (el) {
-            el.scrollIntoView({ behavior: "smooth" });
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
         }
     };
 
     return (
         <header className="public-navbar">
             <div className="public-navbar__inner">
-                <div className="public-navbar__brand" onClick={() => scrollToSection("aplikasi-sigap")}>
-                    <span className="logo-text">SIGAP</span>
+                <div className="public-navbar__brand">
+                    <a href="/" className="public-navbar__brand-link">
+                        <span className="public-navbar__brand-dot"></span>
+                        <span className="logo-text">SIGAP</span>
+                    </a>
                 </div>
 
                 <nav className="public-navbar__nav">
@@ -33,8 +37,7 @@ const PublicNavbar = () => {
                 </nav>
 
                 <div className="public-navbar__actions">
-                    {/* Tombol menuju halaman login admin */}
-                    <Link to="/login-admin" className="btn btn-primary">
+                    <Link to="/login-admin" className="public-navbar__login-btn">
                         Login Admin
                     </Link>
                 </div>

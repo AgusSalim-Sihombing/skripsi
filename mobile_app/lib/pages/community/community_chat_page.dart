@@ -7,11 +7,15 @@ import 'package:mobile_app/services/socket_service.dart';
 class CommunityChatPage extends StatefulWidget {
   final int communityId;
   final String communityName;
+  final String communityStatus;
+  final String? takedownReason;
 
   const CommunityChatPage({
     super.key,
     required this.communityId,
     required this.communityName,
+    this.communityStatus = 'active',
+    this.takedownReason,
   });
 
   @override
@@ -21,6 +25,11 @@ class CommunityChatPage extends StatefulWidget {
 class _CommunityChatPageState extends State<CommunityChatPage> {
   final _msgC = TextEditingController();
   final _scroll = ScrollController();
+
+  late String _communityStatus;
+  String? _takedownReason;
+
+  bool get _isTakedown => _communityStatus == 'takedown';
 
   late final SocketService _socket;
 
@@ -38,18 +47,20 @@ class _CommunityChatPageState extends State<CommunityChatPage> {
   }
 
   @override
-  @override
   void initState() {
     super.initState();
-    _socket =
-        SocketService(); // ✅ sekarang ambil instance yang sama (singleton)
+    _communityStatus = widget.communityStatus;
+    _takedownReason = widget.takedownReason;
 
+    _socket = SocketService();
     _init();
     _setupRealtime();
   }
 
   void _setupRealtime() {
     _socket.off("community:message");
+    _socket.off("community:status");
+    _socket.off("community:message_deleted");
     _socket.off("socket:ready");
 
     void doJoin() {
@@ -60,7 +71,6 @@ class _CommunityChatPageState extends State<CommunityChatPage> {
     if (_socket.isConnected) {
       doJoin();
     } else {
-      // kalau belum connect/ready, tunggu server ready
       _socket.on("socket:ready", (_) => doJoin());
     }
 
@@ -76,6 +86,37 @@ class _CommunityChatPageState extends State<CommunityChatPage> {
       if (!mounted) return;
       setState(() => _messages.add(msg));
       _jumpToBottom();
+    });
+
+    _socket.on("community:status", (data) {
+      final d = Map<String, dynamic>.from(data);
+      final cid = d["community_id"];
+
+      if (cid != widget.communityId) return;
+
+      if (!mounted) return;
+      setState(() {
+        _communityStatus = (d["status"] ?? "active").toString();
+        _takedownReason = d["takedown_reason"]?.toString();
+      });
+    });
+
+    _socket.on("community:message_deleted", (data) {
+      final d = Map<String, dynamic>.from(data);
+      final cid = d["community_id"];
+      final msgId = d["id"];
+
+      if (cid != widget.communityId) return;
+
+      if (!mounted) return;
+      setState(() {
+        _messages = _messages.map((m) {
+          if (m["id"] == msgId) {
+            return {...m, "is_deleted": 1, "message": ""};
+          }
+          return m;
+        }).toList();
+      });
     });
   }
 
@@ -197,6 +238,26 @@ class _CommunityChatPageState extends State<CommunityChatPage> {
       ),
       body: Column(
         children: [
+          if (_isTakedown)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withOpacity(0.25)),
+              ),
+              child: Text(
+                _takedownReason != null && _takedownReason!.trim().isNotEmpty
+                    ? 'Komunitas ini sedang dinonaktifkan admin.\nAlasan: $_takedownReason'
+                    : 'Komunitas ini sedang dinonaktifkan admin.',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
@@ -263,11 +324,14 @@ class _CommunityChatPageState extends State<CommunityChatPage> {
                 children: [
                   Expanded(
                     child: TextField(
+                      enabled: !_isTakedown,
                       controller: _msgC,
                       minLines: 1,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'Ketik pesan...',
+                        hintText: _isTakedown
+                            ? 'Grup sedang dinonaktifkan admin'
+                            : 'Ketik pesan...',
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
@@ -284,7 +348,7 @@ class _CommunityChatPageState extends State<CommunityChatPage> {
                       shape: const CircleBorder(),
                       padding: const EdgeInsets.all(14),
                     ),
-                    onPressed: _sending ? null : _send,
+                    onPressed: (_sending || _isTakedown) ? null : _send,
                     child: _sending
                         ? const SizedBox(
                             width: 18,

@@ -293,10 +293,11 @@ const ZonaBahayaPage = () => {
 
             if (selectedId) {
                 await updateZonaBahaya(selectedId, payload);
+                alert("Data Berhasil Update");
             } else {
                 await createZonaBahaya(payload);
+                alert("Zona Berhasil Dibuat");
             }
-
             await loadZones();
             resetForm();
         } catch (err) {
@@ -364,247 +365,340 @@ const ZonaBahayaPage = () => {
 
     return (
         <AdminLayout>
-            <div className="dashboard-header">
-                <h1>Zona Bahaya</h1>
-                <p>
-                    Kelola titik zona bahaya dan jangkauan radiusnya. Data ini digunakan di
-                    aplikasi mobile untuk memberi peringatan saat pengguna memasuki area
-                    berbahaya.
-                </p>
-            </div>
+            <div className="zona-bahaya-page">
+                <div className="dashboard-header">
+                    <h1>Zona Bahaya</h1>
+                    <p>
+                        Kelola titik zona bahaya dan jangkauan radiusnya. Data ini digunakan di
+                        aplikasi mobile untuk memberi peringatan saat pengguna memasuki area
+                        berbahaya.
+                    </p>
+                </div>
 
-            <div className="zona-bahaya-layout">
-                <div className="zona-bahaya-map">
-                    <div className="zona-bahaya-map-inner">
-                        <MapContainer
-                            center={mapCenter}
-                            zoom={13}
-                            style={{ height: "100%", width: "100%" }}
-                        >
-                            <ZonaClickHandler
-                                enabled={clickMode === "MARK"}
-                                onMapClick={handleMapClick}
-                            />
+                <div className="zona-bahaya-layout">
+                    <div className="zona-bahaya-map">
+                        <div className="zona-bahaya-map-inner">
+                            <MapContainer
+                                center={mapCenter}
+                                zoom={13}
+                                style={{ height: "100%", width: "100%" }}
+                            >
+                                <ZonaClickHandler
+                                    enabled={clickMode === "MARK"}
+                                    onMapClick={handleMapClick}
+                                />
 
-                            <TileLayer
-                                attribution="&copy; OpenStreetMap contributors"
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
+                                <TileLayer
+                                    attribution="&copy; OpenStreetMap contributors"
+                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                />
 
-                            {zones.map((z) => (
-                                <React.Fragment key={z.id_zona}>
+                                {zones.map((z) => (
+                                    <React.Fragment key={z.id_zona}>
+                                        <Circle
+                                            center={[Number(z.latitude), Number(z.longitude)]}
+                                            radius={Number(z.radius_meter)}
+                                            pathOptions={{
+                                                color: z.warna_hex || "#FF0000",
+                                                fillColor: z.warna_hex || "#FF0000",
+                                                fillOpacity: 0.2,
+                                            }}
+                                        />
+
+                                        <Marker
+                                            position={[Number(z.latitude), Number(z.longitude)]}
+                                            icon={z.status_zona === "pending" ? pendingZonaIcon : defaultZonaIcon}
+                                        >
+                                            <Tooltip permanent direction="top" offset={[0, -10]}>
+                                                <div
+                                                    style={{ fontSize: "0.8rem", fontWeight: 600 }}
+                                                >
+                                                    {z.nama_zona}
+                                                </div>
+                                            </Tooltip>
+
+                                            {/* <Popup>
+                                                <div style={{ maxWidth: 220 }}>
+                                                    <strong>{z.nama_zona}</strong>
+                                                    <br />
+                                                    <span>
+                                                        Status: <b>{z.status_zona}</b>
+                                                    </span>
+                                                    <br />
+                                                    <span>
+                                                        Risiko: <b>{z.tingkat_risiko}</b>
+                                                    </span>
+                                                    <br />
+                                                    <span>Radius: {z.radius_meter} m</span>
+                                                    <br />
+                                                    {z.tanggal_kejadian && (
+                                                        <>
+                                                            <span>
+                                                                Tanggal kejadian: {z.tanggal_kejadian}
+                                                            </span>
+                                                            <br />
+                                                        </>
+                                                    )}
+                                                    {z.waktu_kejadian && (
+                                                        <>
+                                                            <span>
+                                                                Waktu kejadian:{" "}
+                                                                {z.waktu_kejadian.slice(0, 5)}
+                                                            </span>
+                                                            <br />
+                                                        </>
+                                                    )}
+                                                    <span>
+                                                        Koordinat: {Number(z.latitude).toFixed(5)},{" "}
+                                                        {Number(z.longitude).toFixed(5)}
+                                                    </span>
+
+                                                    {z.deskripsi && (
+                                                        <>
+                                                            <hr />
+                                                            <div style={{ fontSize: "0.8rem" }}>
+                                                                {z.deskripsi}
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/admin/zona-bahaya/semua/${z.id_zona}`)}
+                                                        className="btn btn-outline"
+                                                        style={{
+                                                            padding: "0.2rem 0.5rem",
+                                                            fontSize: "0.8rem",
+                                                        }}
+                                                    >
+                                                        Lihat Detail
+                                                    </button>
+                                                </div>
+                                            </Popup> */}
+                                            <Popup>
+                                                <div style={{ maxWidth: 220, fontFamily: 'sans-serif' }}>
+                                                    <strong style={{ fontSize: '1.1rem', color: '#1e293b', display: 'block', marginBottom: '8px' }}>
+                                                        {z.nama_zona}
+                                                    </strong>
+
+                                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '8px' }}>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td style={{ padding: '2px 0', color: '#64748b' }}>Status</td>
+                                                                <td style={{ padding: '2px 4px' }}>:</td>
+                                                                <td style={{ padding: '2px 0' }}><b>{z.status_zona}</b></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style={{ padding: '2px 0', color: '#64748b' }}>Risiko</td>
+                                                                <td style={{ padding: '2px 4px' }}>:</td>
+                                                                <td style={{ padding: '2px 0' }}><b>{z.tingkat_risiko}</b></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style={{ padding: '2px 0', color: '#64748b' }}>Radius</td>
+                                                                <td style={{ padding: '2px 4px' }}>:</td>
+                                                                <td style={{ padding: '2px 0' }}>{z.radius_meter} m</td>
+                                                            </tr>
+                                                            {z.tanggal_kejadian && (
+                                                                <tr>
+                                                                    <td style={{ padding: '2px 0', color: '#64748b' }}>Tanggal</td>
+                                                                    <td style={{ padding: '2px 4px' }}>:</td>
+                                                                    <td style={{ padding: '2px 0' }}>{z.tanggal_kejadian}</td>
+                                                                </tr>
+                                                            )}
+                                                            {z.waktu_kejadian && (
+                                                                <tr>
+                                                                    <td style={{ padding: '2px 0', color: '#64748b' }}>Waktu</td>
+                                                                    <td style={{ padding: '2px 4px' }}>:</td>
+                                                                    <td style={{ padding: '2px 0' }}>{z.waktu_kejadian.slice(0, 5)}</td>
+                                                                </tr>
+                                                            )}
+                                                            <tr>
+                                                                <td style={{ padding: '2px 0', color: '#64748b', verticalAlign: 'top' }}>Koordinat</td>
+                                                                <td style={{ padding: '2px 4px', verticalAlign: 'top' }}>:</td>
+                                                                <td style={{ padding: '2px 0' }}>
+                                                                    {Number(z.latitude).toFixed(5)},<br />
+                                                                    {Number(z.longitude).toFixed(5)}
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+
+                                                    {z.deskripsi && (
+                                                        <div style={{
+                                                            borderTop: '1px solid #e2e8f0',
+                                                            paddingTop: '8px',
+                                                            marginTop: '8px',
+                                                            fontSize: '0.8rem',
+                                                            color: '#475569',
+                                                            fontStyle: 'italic',
+                                                            lineHeight: '1.4'
+                                                        }}>
+                                                            {z.deskripsi}
+                                                        </div>
+                                                    )}
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/admin/zona-bahaya/semua/${z.id_zona}`)}
+                                                        className="btn btn-primary"
+                                                        style={{
+                                                            width: '100%',
+                                                            marginTop: '10px',
+                                                            padding: '0.4rem',
+                                                            fontSize: '0.8rem',
+                                                            borderRadius: '4px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        Lihat Detail Zona
+                                                    </button>
+                                                </div>
+                                            </Popup>
+                                        </Marker>
+                                    </React.Fragment>
+                                ))}
+
+                                {!selectedId && form.latitude && form.longitude && (
                                     <Circle
-                                        center={[Number(z.latitude), Number(z.longitude)]}
-                                        radius={Number(z.radius_meter)}
+                                        center={[
+                                            Number(form.latitude),
+                                            Number(form.longitude),
+                                        ]}
+                                        radius={Number(form.radius_meter) || 0}
                                         pathOptions={{
-                                            color: z.warna_hex || "#FF0000",
-                                            fillColor: z.warna_hex || "#FF0000",
+                                            color: form.warna_hex || "#00BFFF",
+                                            fillColor: form.warna_hex || "#00BFFF",
                                             fillOpacity: 0.2,
                                         }}
                                     />
+                                )}
+                            </MapContainer>
+                        </div>
 
-                                    <Marker
-                                        position={[Number(z.latitude), Number(z.longitude)]}
-                                        icon={z.status_zona === "pending" ? pendingZonaIcon : defaultZonaIcon}
+                        <div className="zona-map-modes">
+                            <button
+                                type="button"
+                                className={
+                                    clickMode === "MARK" ? "btn btn-primary" : "btn btn-outline"
+                                }
+                                onClick={() => setClickMode("MARK")}
+                            >
+                                Mode Tandai Lokasi
+                            </button>
+
+                            <button
+                                type="button"
+                                className={
+                                    clickMode === "PAN" ? "btn btn-primary" : "btn btn-outline"
+                                }
+                                onClick={() => setClickMode("PAN")}
+                            >
+                                Mode Geser Map
+                            </button>
+
+                            <button
+                                type="button"
+                                className="btn btn-delete"
+                                onClick={clearMarkedLocation}
+                                disabled={!form.latitude && !form.longitude}
+                                style={{ marginLeft: "0.25rem", color: "white" }}
+                            >
+                                Hapus Tanda Lokasi
+                            </button>
+
+                            <span className="zona-map-modes__hint">
+                                Mode aktif:{" "}
+                                {clickMode === "MARK"
+                                    ? "Tandai lokasi (klik map mengisi lat & long)"
+                                    : "Geser map saja"}
+                            </span>
+                        </div>
+
+                        <div className="zona-map-bottom-actions">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => navigate("/admin/zona-bahaya/semua")}
+                            >
+                                Lihat Semua Zona Bahaya
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="zona-bahaya-form">
+                        <h2 style={{ color: "black" }}>{selectedId ? "Edit Zona Bahaya" : "Tambah Zona Bahaya"}</h2>
+                        <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>
+                            Klik pada peta untuk memilih posisi tengah zona.
+                            {form.id_laporan_sumber &&
+                                " (Zona ini sedang diisi dari data laporan kejahatan)"}
+                        </p>
+
+                        {errorMsg && <div className="login-error">{errorMsg}</div>}
+
+                        {form.id_laporan_sumber && (
+                            <div
+                                className="card"
+                                style={{
+                                    padding: "1rem",
+                                    marginBottom: "1rem",
+                                    border: "1px solid #e5e7eb",
+                                    borderRadius: "12px",
+                                    background: "#fff"
+
+                                }}
+                            >
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: "1rem", color: "black" }}>Preview Foto Laporan</h3>
+                                        <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: "0.85rem" }}>
+                                            Sumber laporan: <b>#{form.id_laporan_sumber}</b>
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline"
+                                        onClick={() => navigate(`/admin/laporan-cepat/${form.id_laporan_sumber}`)}
                                     >
-                                        <Tooltip permanent direction="top" offset={[0, -10]}>
-                                            <div
-                                                style={{ fontSize: "0.8rem", fontWeight: 600 }}
-                                            >
-                                                {z.nama_zona}
-                                            </div>
-                                        </Tooltip>
-
-                                        <Popup>
-                                            <div style={{ maxWidth: 220 }}>
-                                                <strong>{z.nama_zona}</strong>
-                                                <br />
-                                                <span>
-                                                    Status: <b>{z.status_zona}</b>
-                                                </span>
-                                                <br />
-                                                <span>
-                                                    Risiko: <b>{z.tingkat_risiko}</b>
-                                                </span>
-                                                <br />
-                                                <span>Radius: {z.radius_meter} m</span>
-                                                <br />
-                                                {z.tanggal_kejadian && (
-                                                    <>
-                                                        <span>
-                                                            Tanggal kejadian: {z.tanggal_kejadian}
-                                                        </span>
-                                                        <br />
-                                                    </>
-                                                )}
-                                                {z.waktu_kejadian && (
-                                                    <>
-                                                        <span>
-                                                            Waktu kejadian:{" "}
-                                                            {z.waktu_kejadian.slice(0, 5)}
-                                                        </span>
-                                                        <br />
-                                                    </>
-                                                )}
-                                                <span>
-                                                    Koordinat: {Number(z.latitude).toFixed(5)},{" "}
-                                                    {Number(z.longitude).toFixed(5)}
-                                                </span>
-
-                                                {z.deskripsi && (
-                                                    <>
-                                                        <hr />
-                                                        <div style={{ fontSize: "0.8rem" }}>
-                                                            {z.deskripsi}
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </Popup>
-                                    </Marker>
-                                </React.Fragment>
-                            ))}
-
-                            {!selectedId && form.latitude && form.longitude && (
-                                <Circle
-                                    center={[
-                                        Number(form.latitude),
-                                        Number(form.longitude),
-                                    ]}
-                                    radius={Number(form.radius_meter) || 0}
-                                    pathOptions={{
-                                        color: form.warna_hex || "#00BFFF",
-                                        fillColor: form.warna_hex || "#00BFFF",
-                                        fillOpacity: 0.2,
-                                    }}
-                                />
-                            )}
-                        </MapContainer>
-                    </div>
-
-                    <div className="zona-map-modes">
-                        <button
-                            type="button"
-                            className={
-                                clickMode === "MARK" ? "btn btn-primary" : "btn btn-outline"
-                            }
-                            onClick={() => setClickMode("MARK")}
-                        >
-                            Mode Tandai Lokasi
-                        </button>
-
-                        <button
-                            type="button"
-                            className={
-                                clickMode === "PAN" ? "btn btn-primary" : "btn btn-outline"
-                            }
-                            onClick={() => setClickMode("PAN")}
-                        >
-                            Mode Geser Map
-                        </button>
-
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={clearMarkedLocation}
-                            disabled={!form.latitude && !form.longitude}
-                            style={{ marginLeft: "0.25rem" }}
-                        >
-                            Hapus Tanda Lokasi
-                        </button>
-
-                        <span className="zona-map-modes__hint">
-                            Mode aktif:{" "}
-                            {clickMode === "MARK"
-                                ? "Tandai lokasi (klik map mengisi lat & long)"
-                                : "Geser map saja"}
-                        </span>
-                    </div>
-
-                    <div className="zona-map-bottom-actions">
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => navigate("/admin/zona-bahaya/semua")}
-                        >
-                            Lihat Semua Zona Bahaya
-                        </button>
-                    </div>
-                </div>
-
-                <div className="zona-bahaya-form">
-                    <h2>{selectedId ? "Edit Zona Bahaya" : "Tambah Zona Bahaya"}</h2>
-                    <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>
-                        Klik pada peta untuk memilih posisi tengah zona.
-                        {form.id_laporan_sumber &&
-                            " (Zona ini sedang diisi dari data laporan kejahatan)"}
-                    </p>
-
-                    {errorMsg && <div className="login-error">{errorMsg}</div>}
-
-                    {form.id_laporan_sumber && (
-                        <div
-                            className="card"
-                            style={{
-                                padding: "1rem",
-                                marginBottom: "1rem",
-                                border: "1px solid #e5e7eb",
-                                borderRadius: "12px",
-                                background: "#fff",
-                            }}
-                        >
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                                <div>
-                                    <h3 style={{ margin: 0, fontSize: "1rem" }}>Preview Foto Laporan</h3>
-                                    <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: "0.85rem" }}>
-                                        Sumber laporan: <b>#{form.id_laporan_sumber}</b>
-                                    </p>
+                                        Buka Detail
+                                    </button>
                                 </div>
 
-                                <button
-                                    type="button"
-                                    className="btn btn-outline"
-                                    onClick={() => navigate(`/admin/laporan-cepat/${form.id_laporan_sumber}`)}
-                                >
-                                    Buka Detail
-                                </button>
+                                <div style={{ marginTop: 12 }}>
+                                    {fotoLoading ? (
+                                        <p style={{ color: "#6b7280", margin: 0 }}>Memuat foto...</p>
+                                    ) : laporanFotoUrl ? (
+                                        <img
+                                            src={laporanFotoUrl}
+                                            alt="Foto laporan"
+                                            style={{
+                                                width: "100%",
+                                                maxHeight: 260,
+                                                objectFit: "contain",
+                                                borderRadius: 12,
+                                                border: "1px solid #e5e7eb",
+                                                background: "#f9fafb",
+                                            }}
+                                        />
+                                    ) : (
+                                        <div
+                                            style={{
+                                                padding: "14px",
+                                                borderRadius: 12,
+                                                border: "1px dashed #d1d5db",
+                                                color: "#6b7280",
+                                                background: "#f9fafb",
+                                            }}
+                                        >
+                                            {fotoError || "Foto tidak ditemukan pada laporan ini."}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-
-                            <div style={{ marginTop: 12 }}>
-                                {fotoLoading ? (
-                                    <p style={{ color: "#6b7280", margin: 0 }}>Memuat foto...</p>
-                                ) : laporanFotoUrl ? (
-                                    <img
-                                        src={laporanFotoUrl}
-                                        alt="Foto laporan"
-                                        style={{
-                                            width: "100%",
-                                            maxHeight: 260,
-                                            objectFit: "contain",
-                                            borderRadius: 12,
-                                            border: "1px solid #e5e7eb",
-                                            background: "#f9fafb",
-                                        }}
-                                    />
-                                ) : (
-                                    <div
-                                        style={{
-                                            padding: "14px",
-                                            borderRadius: 12,
-                                            border: "1px dashed #d1d5db",
-                                            color: "#6b7280",
-                                            background: "#f9fafb",
-                                        }}
-                                    >
-                                        {fotoError || "Foto tidak ditemukan pada laporan ini."}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                        )}
 
 
-                    <form onSubmit={handleSubmit} className="zona-form">
+                        {/* <form onSubmit={handleSubmit} className="zona-form">
                         <div className="form-group">
                             <label>Nama Zona</label>
                             <input
@@ -685,13 +779,6 @@ const ZonaBahayaPage = () => {
 
                             <div className="form-group">
                                 <label>Warna Zona</label>
-                                {/* <input
-                                    type="color"
-                                    name="warna_hex"
-                                    value={form.warna_hex}
-                                    onChange={handleFormChange}
-                                    style={{ padding: 0, height: "36px" }}
-                                /> */}
                                 <select
                                     name="warna_hex"
                                     value={form.warna_hex}
@@ -746,11 +833,167 @@ const ZonaBahayaPage = () => {
                                 Reset
                             </button>
                         </div>
-                    </form>
+                    </form> */}
 
-                    <hr style={{ margin: "1rem 0" }} />
+                        <form onSubmit={handleSubmit} className="zona-form">
+                            <div className="form-section">
+                                <h3 className="section-title">Informasi Dasar</h3>
+                                <div className="form-group">
+                                    <label>Nama Zona</label>
+                                    <input
+                                        className="form-control"
+                                        name="nama_zona"
+                                        value={form.nama_zona}
+                                        onChange={handleFormChange}
+                                        placeholder="Contoh: Zona Rawan Pencurian"
+                                        required
+                                    />
+                                </div>
 
-                    <h3 style={{ marginBottom: "0.5rem" }}>Daftar Zona</h3>
+                                <div className="form-group">
+                                    <label>Deskripsi (Opsional)</label>
+                                    <textarea
+                                        className="form-control"
+                                        name="deskripsi"
+                                        value={form.deskripsi}
+                                        onChange={handleFormChange}
+                                        rows={3}
+                                        placeholder="Berikan keterangan singkat mengenai situasi keamanan di area ini..."
+                                    />
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group flex-1">
+                                        <label>Tanggal Kejadian (opsional)</label>
+                                        <input
+                                            style={{ width: "90%" }}
+                                            className="form-control"
+                                            type="date"
+                                            name="tanggal_kejadian"
+                                            value={form.tanggal_kejadian}
+                                            onChange={handleFormChange}
+                                        />
+                                    </div>
+                                    <div className="form-group flex-1">
+                                        <label>Waktu Kejadian (opsional)</label>
+                                        <input
+                                            style={{ width: "100%" }}
+                                            className="form-control"
+                                            type="time"
+                                            name="waktu_kejadian"
+                                            value={form.waktu_kejadian}
+                                            onChange={handleFormChange}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="form-section">
+                                <h3 className="section-title">Koordinat & Jangkauan</h3>
+                                <div className="form-row">
+                                    <div className="form-group flex-1">
+                                        <label>Latitude</label>
+                                        <input
+                                            style={{ width: "90%" }}
+                                            className="form-control readonly-input"
+                                            name="latitude"
+                                            value={form.latitude}
+                                            onChange={handleFormChange}
+                                            placeholder="-7.12345"
+                                            readOnly
+                                        />
+                                    </div>
+                                    <div className="form-group flex-1">
+                                        <label>Longitude</label>
+                                        <input
+                                            className="form-control readonly-input"
+                                            name="longitude"
+                                            value={form.longitude}
+                                            onChange={handleFormChange}
+                                            placeholder="110.12345"
+                                            readOnly
+                                        />
+                                    </div>
+                                </div>
+                                <small className="help-text">* Koordinat otomatis terisi saat Anda mengklik peta.</small>
+                            </div>
+
+                            <div className="form-section">
+                                <h3 className="section-title">Atribut Zona</h3>
+                                <div className="form-row">
+                                    <div className="form-group flex-1">
+                                        <label>Radius (Meter)</label>
+                                        <input
+                                            className="form-control"
+                                            type="number"
+                                            name="radius_meter"
+                                            value={form.radius_meter}
+                                            min={10}
+                                            step={10}
+                                            onChange={handleFormChange}
+                                            style={{ width: "100px" }}
+                                        />
+                                    </div>
+                                    <div className="form-group flex-1">
+                                        <label>Warna Indikator</label>
+                                        <select
+                                            className={`form-control select-color ${form.warna_hex}`}
+                                            name="warna_hex"
+                                            value={form.warna_hex}
+                                            onChange={handleFormChange}
+                                        >
+                                            <option value="red">🔴 Merah (Sangat Bahaya)</option>
+                                            <option value="yellow">🟡 Kuning (Waspada)</option>
+                                            <option value="black">⚫ Hitam (Area Terlarang)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group flex-1">
+                                        <label>Tingkat Risiko</label>
+                                        <select
+                                            className="form-control"
+                                            name="tingkat_risiko"
+                                            value={form.tingkat_risiko}
+                                            onChange={handleFormChange}
+                                        >
+                                            <option value="rendah">Rendah</option>
+                                            <option value="sedang">Sedang</option>
+                                            <option value="tinggi">Tinggi</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group flex-1">
+                                        <label>Status Validasi</label>
+                                        <select
+                                            className="form-control"
+                                            name="status_zona"
+                                            value={form.status_zona}
+                                            onChange={handleFormChange}
+                                        >
+                                            <option value="pending">⏳ Pending</option>
+                                            <option value="approve">✅ Approve</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="zona-form-actions">
+                                <button type="submit" className="btn btn-save" disabled={saving}>
+                                    {saving ? "Memproses..." : selectedId ? "Simpan Perubahan" : "Buat Zona Baru"}
+                                </button>
+                                <button type="button" className="btn btn-reset" onClick={() => resetForm()} disabled={saving}>
+                                    Batalkan
+                                </button>
+                            </div>
+                        </form>
+
+
+
+                    </div>
+
+                </div>
+                <div>
+                    <h3 style={{ marginBottom: "0.5rem", color: "black" }}>Daftar Zona Bahaya</h3>
                     {loading ? (
                         <p>Memuat data...</p>
                     ) : zones.length === 0 ? (
@@ -770,6 +1013,7 @@ const ZonaBahayaPage = () => {
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     {zones.map((z) => (
                                         <tr key={z.id_zona}>
@@ -798,23 +1042,38 @@ const ZonaBahayaPage = () => {
                                                     style={{
                                                         padding: "0.2rem 0.5rem",
                                                         fontSize: "0.8rem",
+                                                        marginRight: "0.3rem",
                                                     }}
                                                     onClick={() => handleEdit(z)}
                                                 >
                                                     Edit
                                                 </button>
+
                                                 <button
                                                     type="button"
-                                                    className="btn btn-secondary"
+                                                    onClick={() => navigate(`/admin/zona-bahaya/semua/${z.id_zona}`)}
+                                                    className="btn btn-outline"
+                                                    style={{
+                                                        padding: "0.2rem 0.5rem",
+                                                        fontSize: "0.8rem",
+                                                    }}
+                                                >
+                                                    Detail
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-danger"
                                                     style={{
                                                         padding: "0.2rem 0.5rem",
                                                         fontSize: "0.8rem",
                                                         marginLeft: "0.3rem",
+                                                        backgroundColor: "#dc2626",
                                                     }}
                                                     onClick={() => handleDelete(z.id_zona)}
                                                 >
                                                     Hapus
                                                 </button>
+
                                             </td>
                                         </tr>
                                     ))}

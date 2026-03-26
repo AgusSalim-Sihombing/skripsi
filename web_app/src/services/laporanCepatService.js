@@ -144,3 +144,13 @@ export const getLaporanCepatLocations = async () => {
     );
     return res.data;
 };
+
+export const deleteLaporan = async (id) => {
+    const res = await axios.delete(
+        `${API_BASE_URL}/admin/laporan-cepat/${id}`,
+        {
+            headers: getAuthHeader(),
+        }
+    );
+    return res.data;
+};

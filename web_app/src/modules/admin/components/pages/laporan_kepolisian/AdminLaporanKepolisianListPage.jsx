@@ -87,9 +87,9 @@ export default function AdminLaporanKepolisianListPage() {
     return (
         <AdminLayout>
             <div className="lk-admin" style={{color:"black"}}>
-                <div className="lk-admin__header">
+                <div className="lk-admin__header dashboard-header">
                     <div>
-                        <h2 className="lk-admin__title">Laporan Kepolisian</h2>
+                        <h1 className="lk-admin__title">Laporan Kepolisian</h1>
                         <p className="lk-admin__subtitle">
                             Lihat semua laporan + officer yang menerima.
                         </p>

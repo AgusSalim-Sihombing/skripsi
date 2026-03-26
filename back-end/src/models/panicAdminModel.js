@@ -65,9 +65,13 @@ const adminDetail = async (panicId) => {
 
       cu.username AS citizenUsername,
       cu.nama AS citizenNama,
+      cu.phone AS citizenPhone,
+      cu.alamat as citizenAlamat,
 
       ou.username AS officerUsername,
       ou.nama AS officerNama,
+      ou.phone AS officerPhone,
+      ou.alamat as officerAlamat,
 
       ol.last_lat AS officerLastLat,
       ol.last_lng AS officerLastLng,

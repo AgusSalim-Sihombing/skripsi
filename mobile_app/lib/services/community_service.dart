@@ -154,6 +154,25 @@ class CommunityService {
   // GET MESSAGES
   // GET /api/public/communities/:id/messages?limit=50&before=...
   // ===========================
+  // static Future<List<dynamic>> fetchMessages({
+  //   required int communityId,
+  //   int limit = 50,
+  //   String? beforeIso,
+  // }) async {
+  //   final q = <String, String>{'limit': '$limit'};
+  //   if (beforeIso != null) q['before'] = beforeIso;
+
+  //   final uri = Uri.parse(
+  //     _base('/public/communities/$communityId/messages'),
+  //   ).replace(queryParameters: q);
+
+  //   final res = await http.get(uri, headers: await _headers());
+  //   if (res.statusCode != 200) {
+  //     throw Exception('Gagal ambil chat: ${res.statusCode} ${res.body}');
+  //   }
+  //   return (jsonDecode(res.body) as List<dynamic>);
+  // }
+
   static Future<List<dynamic>> fetchMessages({
     required int communityId,
     int limit = 50,
@@ -167,10 +186,26 @@ class CommunityService {
     ).replace(queryParameters: q);
 
     final res = await http.get(uri, headers: await _headers());
+
     if (res.statusCode != 200) {
       throw Exception('Gagal ambil chat: ${res.statusCode} ${res.body}');
     }
-    return (jsonDecode(res.body) as List<dynamic>);
+
+    final decoded = jsonDecode(res.body);
+
+    // support dua format:
+    // 1. langsung list
+    // 2. object { success, data: [...] }
+    if (decoded is List<dynamic>) {
+      return decoded;
+    }
+
+    if (decoded is Map<String, dynamic>) {
+      final data = decoded['data'];
+      if (data is List<dynamic>) return data;
+    }
+
+    return [];
   }
 
   // ===========================

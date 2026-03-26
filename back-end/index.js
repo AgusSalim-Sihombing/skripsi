@@ -84,107 +84,9 @@ app.get("/", (req, res) => {
 });
 
 
-// io.use((socket, next) => {
-//   try {
-//     const token =
-//       socket.handshake.auth?.token ||
-//       socket.handshake.query?.token ||
-//       null;
-
-//     if (!token) return next(new Error("Token tidak ditemukan"));
-
-//     const decoded = jwt.verify(token, USER_JWT_SECRET);
-//     socket.user = decoded; // { id, username, role, status_verifikasi }
-
-//     next();
-//   } catch (e) {
-//     next(new Error("Token tidak valid"));
-//   }
-// });
-
-
-// io.on("connection", (socket) => {
-//   const { id, role } = socket.user || {};
-
-//   console.log("✅ socket connected:", socket.id, "user:", id, "role:", role);
-
-//   // join room
-//   if (role === "officer") socket.join(`officer:${id}`);
-//   if (role === "masyarakat") socket.join(`citizen:${id}`);
-
-//   console.log("🏠 joined rooms:", Array.from(socket.rooms)); // <- penting
-
-//   socket.emit("socket:ready", { ok: true, id, role });
-// });
-
 
 // biar controller bisa akses io via req.app.get("io")
 app.set("io", io);
-
-// io.use((socket, next) => {
-//   try {
-//     const token = socket.handshake.auth?.token || socket.handshake.query?.token || null;
-//     if (!token) return next(new Error("Token tidak ditemukan"));
-
-//     const decoded = jwt.verify(token, USER_JWT_SECRET);
-//     socket.user = decoded; // { id, username, role, status_verifikasi }
-//     next();
-//   } catch (e) {
-//     next(new Error("Token tidak valid"));
-//   }
-// });
-
-// io.on("connection", (socket) => {
-//   const { id, role } = socket.user || {};
-//   console.log("✅ socket connected:", socket.id, "user:", id, "role:", role);
-
-//   // join room user
-//   if (role === "officer") socket.join(`officer:${id}`);
-//   if (role === "masyarakat") socket.join(`citizen:${id}`);
-
-//   // ✅ join room komunitas
-//   socket.on("community:join", ({ communityId }) => {
-//     if (!communityId) return;
-//     socket.join(`community:${communityId}`);
-//     console.log("🏠 join community room:", `community:${communityId}`);
-//   });
-
-//   socket.on("community:leave", ({ communityId }) => {
-//     if (!communityId) return;
-//     socket.leave(`community:${communityId}`);
-//     console.log("🚪 leave community room:", `community:${communityId}`);
-//   });
-
-//   socket.emit("socket:ready", { ok: true, id, role });
-// });
-
-// io.on("connection", (socket) => {
-//   // citizen join room panic
-//   socket.on("panic:join", ({ panicId }) => {
-//     if (!panicId) return;
-//     socket.join(`panic:${panicId}`);
-//   });
-
-//   socket.on("panic:leave", ({ panicId }) => {
-//     if (!panicId) return;
-//     socket.leave(`panic:${panicId}`);
-//   });
-
-//   // officer kirim lokasi
-//   socket.on("officer:location", (payload) => {
-//     const { panicId, lat, lng, speed, updatedAt } = payload || {};
-//     if (!panicId || lat == null || lng == null) return;
-
-//     // broadcast ke citizen yang follow panic ini
-//     io.to(`panic:${panicId}`).emit("officer:location", {
-//       panicId,
-//       lat,
-//       lng,
-//       speed: speed ?? null,
-//       updatedAt: updatedAt ?? new Date().toISOString(),
-//     });
-//   });
-// });
 
 io.use((socket, next) => {
   try {
@@ -242,19 +144,32 @@ io.on("connection", (socket) => {
   });
 
   // ===== OFFICER LOCATION REALTIME =====
-  socket.on("officer:location", (payload) => {
-    const { panicId, lat, lng, speed, updatedAt } = payload || {};
-    if (!panicId || lat == null || lng == null) return;
+  socket.on("officer:location", async (payload) => {
+    try {
+      const { panicId, lat, lng, speed, updatedAt } = payload || {};
+      if (!panicId || lat == null || lng == null) return;
 
-    console.log("📍 officer:location IN =>", { panicId, lat, lng });
+      console.log("📍 officer:location IN =>", { panicId, lat, lng });
 
-    io.to(`panic:${panicId}`).emit("officer:location", {
-      panicId,
-      lat,
-      lng,
-      speed: speed ?? null,
-      updatedAt: updatedAt ?? new Date().toISOString(),
-    });
+      const out = {
+        panicId,
+        lat,
+        lng,
+        speed: speed ?? null,
+        updatedAt: updatedAt ?? new Date().toISOString(),
+      };
+
+      // 1) broadcast ke room panic
+      io.to(`panic:${panicId}`).emit("officer:location", out);
+
+      // 2) broadcast ke citizen room juga (aman banget)
+      const panic = await require("./src/models/panicModel").getPanicById(panicId);
+      if (panic?.citizen_id) {
+        io.to(`citizen:${panic.citizen_id}`).emit("officer:location", out);
+      }
+    } catch (e) {
+      console.log("❌ officer:location handler error:", e.message);
+    }
   });
 
   socket.on("disconnect", (reason) => {

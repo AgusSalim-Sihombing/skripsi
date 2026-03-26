@@ -225,6 +225,7 @@ const {
     getLaporanById,
     getLaporanForZonaSelector,
     updateStatusLaporan,
+    deleteLaporanById,
 } = require("../models/laporanCepatModel");
 
 const { setZonaStatusByLaporan } = require("../models/zonaBahayaModel");
@@ -431,6 +432,83 @@ const getAdminLaporanDetailController = async (req, res) => {
     }
 };
 
+const deleteLaporanAdmin = async (req, res) => {
+    const conn = await db.getConnection();
+
+    try {
+        const { id } = req.params;
+
+        await conn.beginTransaction();
+
+        // cek laporan dulu
+        const [laporanRows] = await conn.execute(
+            `SELECT id_laporan FROM laporan_cepat WHERE id_laporan = ? LIMIT 1`,
+            [id]
+        );
+
+        if (laporanRows.length === 0) {
+            await conn.rollback();
+            return res.status(404).json({
+                success: false,
+                message: "Laporan tidak ditemukan",
+            });
+        }
+
+        // 2. cari zona yang berasal dari laporan ini
+        const [zonaRows] = await conn.execute(
+            `SELECT id_zona FROM zona_bahaya WHERE id_laporan_sumber = ?`,
+            [id]
+        );
+
+        // 3. hapus vote zona jika ada
+        if (zonaRows.length > 0) {
+            const zonaIds = zonaRows.map((z) => z.id_zona);
+            const placeholders = zonaIds.map(() => "?").join(",");
+
+            await conn.execute(
+                `DELETE FROM zona_bahaya_vote WHERE id_zona IN (${placeholders})`,
+                zonaIds
+            );
+        }
+
+        // 4. hapus zona yang berasal dari laporan
+        await conn.execute(
+            `DELETE FROM zona_bahaya WHERE id_laporan_sumber = ?`,
+            [id]
+        );
+
+        // 5. hapus laporan
+        const [deleteResult] = await conn.execute(
+            `DELETE FROM laporan_cepat WHERE id_laporan = ?`,
+            [id]
+        );
+
+        if (deleteResult.affectedRows === 0) {
+            await conn.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "Gagal menghapus laporan",
+            });
+        }
+
+        await conn.commit();
+
+        return res.json({
+            success: true,
+            message: "Laporan berhasil dihapus beserta data terkaitnya",
+        });
+    } catch (err) {
+        await conn.rollback();
+        console.error("deleteLaporanAdmin error:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Gagal menghapus laporan",
+            error: err.message,
+        });
+    } finally {
+        conn.release();
+    }
+};
 
 module.exports = {
     listLaporanAdmin,
@@ -438,6 +516,7 @@ module.exports = {
     listLaporanForZona,
     approveLaporanAdmin,
     rejectLaporanAdmin,
+    deleteLaporanAdmin,
     fotoLaporanAdmin,
     getAdminLaporanDetailController,
 };

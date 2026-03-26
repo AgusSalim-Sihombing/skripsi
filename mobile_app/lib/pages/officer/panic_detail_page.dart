@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobile_app/services/socket_service.dart';
+import 'package:mobile_app/pages/officer/officer_route_map_page.dart';
 
 class PanicDetailPage extends StatefulWidget {
   final String token;
@@ -329,11 +330,26 @@ class _PanicDetailPageState extends State<PanicDetailPage> {
     }
   }
 
+  void _openInAppRoute() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OfficerRouteMapPage(
+          panicId: _panicId,
+          citizenLat: _lat,
+          citizenLng: _lng,
+          citizenName: (_citizen?["nama"] ?? _fromName).toString(),
+          address: _address,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _distanceSub?.cancel();
     _stopShareLocation();
-    _socket.disconnect();
+    // _socket.disconnect();
     super.dispose();
   }
 
@@ -427,7 +443,8 @@ class _PanicDetailPageState extends State<PanicDetailPage> {
             const SizedBox(height: 10),
 
             ElevatedButton.icon(
-              onPressed: _responded ? _openGoogleMapsNav : null,
+              // onPressed: _responded ? _openGoogleMapsNav : null,
+              onPressed: _responded ? _openInAppRoute : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueGrey,
                 padding: const EdgeInsets.symmetric(vertical: 14),

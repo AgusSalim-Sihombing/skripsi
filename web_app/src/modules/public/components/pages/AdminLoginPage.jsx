@@ -47,7 +47,7 @@ const AdminLoginPage = () => {
         } catch (err) {
             console.error("Login error:", err);
             setErrorMsg(
-                err?.response?.data?.message || "Terjadi kesalahan saat login"
+                err?.response?.data?.message || "Terjadi kesalahan pada server saat login"
             );
         } finally {
             setLoading(false);

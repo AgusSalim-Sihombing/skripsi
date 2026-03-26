@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -22,23 +23,28 @@ class PanicHoldButton extends StatefulWidget {
 
 class _PanicHoldButtonState extends State<PanicHoldButton> {
   Timer? _timer;
-  double _progress = 0.0;
+
+  double _progress = 0.0; // 0..1 untuk animasi fill
   bool _sending = false;
+
+  static const int _totalMs = 1000; // ✅ 1 detik
+  static const int _tickMs = 16; // ~60fps
 
   void _startHold() {
     if (_sending) return;
-    _timer?.cancel();
-    setState(() => _progress = 0);
 
-    const totalMs = 3000;
-    const tickMs = 60;
+    _timer?.cancel();
+    setState(() => _progress = 0.0);
+
     int elapsed = 0;
 
-    _timer = Timer.periodic(const Duration(milliseconds: tickMs), (t) async {
-      elapsed += tickMs;
-      setState(() => _progress = elapsed / totalMs);
+    _timer = Timer.periodic(const Duration(milliseconds: _tickMs), (t) async {
+      elapsed += _tickMs;
 
-      if (elapsed >= totalMs) {
+      final p = (elapsed / _totalMs).clamp(0.0, 1.0);
+      if (mounted) setState(() => _progress = p);
+
+      if (elapsed >= _totalMs) {
         t.cancel();
         await _sendPanic();
       }
@@ -47,12 +53,12 @@ class _PanicHoldButtonState extends State<PanicHoldButton> {
 
   void _cancelHold() {
     _timer?.cancel();
-    setState(() => _progress = 0);
+    if (mounted) setState(() => _progress = 0.0);
   }
 
   Future<void> _sendPanic() async {
     try {
-      setState(() => _sending = true);
+      if (mounted) setState(() => _sending = true);
 
       // permission lokasi
       LocationPermission perm = await Geolocator.checkPermission();
@@ -61,11 +67,10 @@ class _PanicHoldButtonState extends State<PanicHoldButton> {
       }
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Izin lokasi ditolak")));
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Izin lokasi ditolak")));
         return;
       }
 
@@ -82,7 +87,7 @@ class _PanicHoldButtonState extends State<PanicHoldButton> {
         body: jsonEncode({
           "lat": pos.latitude,
           "lng": pos.longitude,
-          "address": null, // optional (nanti bisa reverse geocode)
+          "address": null,
         }),
       );
 
@@ -117,11 +122,10 @@ class _PanicHoldButtonState extends State<PanicHoldButton> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error: $e")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       if (mounted) setState(() => _sending = false);
       _cancelHold();
@@ -136,28 +140,33 @@ class _PanicHoldButtonState extends State<PanicHoldButton> {
 
   @override
   Widget build(BuildContext context) {
+    const baseColor = Color(0xFFC62828); // merah utama
+    const fillColor = Color(0xFF8E0000); // lebih gelap (pekat)
+
+    final bool isHolding = _progress > 0 && !_sending;
+
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTapDown: (_) => _startHold(),
       onTapUp: (_) => _cancelHold(),
-      onTapCancel: () => _cancelHold(),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC62828),
-                disabledBackgroundColor: const Color(0xFFC62828),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                elevation: 2,
+      onTapCancel: _cancelHold,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          children: [
+            // Base button background
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: baseColor,
+                borderRadius: BorderRadius.circular(18),
               ),
+              alignment: Alignment.center,
               child: Text(
-                _sending ? "MENGIRIM..." : "PANIC BUTTON",
+                _sending
+                    ? "MENGIRIM..."
+                    : (isHolding ? "TAHAN..." : "PANIC BUTTON"),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -166,22 +175,38 @@ class _PanicHoldButtonState extends State<PanicHoldButton> {
                 ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 6,
-            left: 14,
-            right: 14,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(
-                value: _progress == 0 ? null : _progress,
-                minHeight: 4,
-                backgroundColor: Colors.white24,
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+
+            // ✅ Fill overlay dari kiri ke kanan (makin pekat)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: _progress.clamp(0.0, 1.0),
+                    heightFactor: 1,
+                    child: Container(color: fillColor.withOpacity(0.75)),
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+
+            // optional: subtle border highlight saat hold
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(isHolding ? 0.45 : 0.20),
+                      width: isHolding ? 1.5 : 1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

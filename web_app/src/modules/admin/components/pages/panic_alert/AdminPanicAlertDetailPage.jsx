@@ -3,15 +3,16 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../../../shared/layout/AdminLayout";
 import { fetchPanicAlertDetail } from "../../../../../services/panicAlertService";
 
+// Tambahkan Polyline di sini
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
-import "./AdminPanicList.css"
+import "./AdminPanicList.css";
+import RoutingMachine from "./RoutingMachine";
 
-const fmt = (d) => (d ? new Date(d).toLocaleString() : "-");
+const fmt = (d) => (d ? new Date(d).toLocaleString("id-ID") : "-");
 
 const AdminPanicAlertDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -20,9 +21,7 @@ const AdminPanicAlertDetailPage = () => {
         try {
             const res = await fetchPanicAlertDetail(id);
             if (res?.success) setData(res.data);
-            else setData(null);
         } catch (e) {
-            console.error(e);
             if (e?.response?.status === 401) navigate("/login-admin");
         } finally {
             setLoading(false);
@@ -37,137 +36,157 @@ const AdminPanicAlertDetailPage = () => {
     const citizenPos = useMemo(() => {
         const lat = Number(panic?.citizen_lat);
         const lng = Number(panic?.citizen_lng);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-        return [lat, lng];
+        return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
     }, [panic]);
 
     const officerPos = useMemo(() => {
         const lat = Number(panic?.officerLastLat);
         const lng = Number(panic?.officerLastLng);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-        return [lat, lng];
+        return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
     }, [panic]);
 
     const center = citizenPos || officerPos || [-6.2, 106.816666];
 
     return (
         <AdminLayout>
-            <div className="dashboard-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                    <h1>Detail Panic #{id}</h1>
-                    <p>Status: <b>{panic?.status || "-"}</b></p>
+            <div className="panic-detail-container">
+                <div className="panic-detail-header">
+                    <div>
+                        <h1 className="panic-title">Detail Laporan Panic #{id}</h1>
+                        <span className={`panic-status-badge status-${panic?.status?.toLowerCase()}`}>
+                            Status: {panic?.status || "-"}
+                        </span>
+                    </div>
+                    <button  onClick={() => navigate("/admin/panic-alert")}>
+                        ← Kembali ke Daftar
+                    </button>
                 </div>
-                <button onClick={() => navigate("/admin/panic-alert")}>← Kembali</button>
-            </div>
 
-            {loading ? (
-                <p>Loading...</p>
-            ) : !panic ? (
-                <p>Data panic tidak ditemukan.</p>
-            ) : (
-                <>
-                    <div className="dashboard-cards" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-                        <div className="dashboard-card">
-                            <span className="dashboard-card__label">Masyarakat</span>
-                            <span className="dashboard-card__value" style={{ fontSize: 16 }}>
-                                {panic.citizen_name_snap || panic.citizenNama || "-"}
-                            </span>
-                            <div style={{ color: "#666", fontSize: 12 }}>{panic.citizenUsername || ""}</div>
-                            <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
-                                Lokasi: {panic.citizen_address_snap || `${panic.citizen_lat}, ${panic.citizen_lng}`}
+                {loading ? (
+                    <div className="panic-loading">Memuat data detail...</div>
+                ) : !panic ? (
+                    <div className="panic-error">Data tidak ditemukan.</div>
+                ) : (
+                    <>
+                        <div className="panic-info-grid">
+                            {/* KARTU MASYARAKAT */}
+                            <div className="panic-info-card citizen-border">
+                                <div className="card-icon-header">
+                                    <span className="icon">👤</span>
+                                    <h4>Data Masyarakat</h4>
+                                </div>
+                                <div className="card-body">
+
+                                    <table className="mini-table">
+                                        <tbody>
+                                            <tr><td><strong>Nama</strong></td><td>:</td><td>{panic.citizen_name_snap || panic.citizenNama || "-"}</td></tr>
+                                            <tr><td><strong>Username</strong></td><td>:</td><td>@{panic.citizenUsername || ""}</td></tr>
+                                            <tr><td><strong>Alamat Rumah</strong></td><td>:</td><td>{panic.citizenAlamat || "Lokasi GPS Terlampir"}</td></tr>
+                                            <tr><td><strong>No. Tlp</strong></td><td>:</td><td>{panic.citizenPhone || ""}</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* KARTU OFFICER */}
+                            <div className="panic-info-card officer-border">
+                                <div className="card-icon-header">
+                                    <span className="icon">👮</span>
+                                    <h4>Petugas Respon</h4>
+                                </div>
+                                <div className="card-body">
+                                    <table className="mini-table">
+                                        <tbody>
+                                            <tr><td><strong>Nama</strong></td><td>:</td><td>{panic.assigned_officer_name_snap || panic.officerNama || "Belum ada petugas"}</td></tr>
+                                            <tr><td><strong>Username</strong></td><td>:</td><td>@{panic.officerUsername || "-"}</td></tr>
+                                            <tr><td><strong>Terakhir Update</strong></td><td>:</td><td>{fmt(panic.officerLastUpdatedAt)}</td></tr>
+                                             <tr><td><strong>Alamat Rumah</strong></td><td>:</td><td>{panic.officerAlamat || "Lokasi GPS Terlampir"}</td></tr>
+                                            <tr><td><strong>No. Tlp</strong></td><td>:</td><td>{panic.officerPhone || ""}</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* KARTU TIMELINE */}
+                            <div className="panic-info-card timeline-border">
+                                <div className="card-icon-header">
+                                    <span className="icon">🕒</span>
+                                    <h4>Timeline Kejadian</h4>
+                                </div>
+                                <div className="card-body">
+                                    <table className="mini-table">
+                                        <tbody>
+                                            <tr><td>Dibuat</td><td>:</td><td>{fmt(panic.created_at)}</td></tr>
+                                            <tr><td>Direspon</td><td>:</td><td>{fmt(panic.responded_at)}</td></tr>
+                                            <tr><td>Selesai</td><td>:</td><td>{fmt(panic.resolved_at)}</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="dashboard-card">
-                            <span className="dashboard-card__label">Officer Respon</span>
-                            <span className="dashboard-card__value" style={{ fontSize: 16 }}>
-                                {panic.assigned_officer_name_snap || panic.officerNama || "-"}
-                            </span>
-                            <div style={{ color: "#666", fontSize: 12 }}>{panic.officerUsername || ""}</div>
-                            <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
-                                Last GPS: {officerPos ? `${officerPos[0]}, ${officerPos[1]}` : "-"}
+                        {/* MAP DENGAN GARIS RUTE */}
+                        <div className="panic-map-section">
+                            <div className="map-card-header">
+                                <h3>Visualisasi Lokasi & Rute Penyelamatan</h3>
+                                <p>Titik  <span style={{ color: '#d90429', fontWeight: 'bold' }}>Merah</span>: Citizen | Titik <span style={{ color: '#1d4ed8', fontWeight: 'bold' }}>Biru</span>: Officer</p>
                             </div>
-                            <div style={{ fontSize: 12, color: "#444" }}>
-                                Updated: {fmt(panic.officerLastUpdatedAt)}
-                            </div>
-                        </div>
+                            <div className="map-frame">
+                                <MapContainer center={center} zoom={15} className="leaflet-container-custom">
+                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-                        <div className="dashboard-card">
-                            <span className="dashboard-card__label">Timeline</span>
-                            <div style={{ marginTop: 8, fontSize: 13, color:"black" }}>
-                                Created: <b>{fmt(panic.created_at)}</b><br />
-                                Responded: <b>{fmt(panic.responded_at)}</b><br />
-                                Resolved: <b>{fmt(panic.resolved_at)}</b>
-                            </div>
-                        </div>
-                    </div>
+                                    {/* RUTE JALAN ASLI */}
+                                    {citizenPos && officerPos && (
+                                        <RoutingMachine waypoint1={officerPos} waypoint2={citizenPos} />
+                                    )}
 
-                    <div className="dashboard-map-card" style={{ marginTop: 16 }}>
-                        <div className="dashboard-map-card__header">
-                            <div>
-                                <h3>Map</h3>
-                                <p className="dashboard-map-card__sub">
-                                    Marker merah = citizen, marker biru = officer (kalau ada).
-                                </p>
+                                    {/* Marker tetap ditampilkan sebagai titik akhir */}
+                                    {citizenPos && (
+                                        <CircleMarker center={citizenPos} radius={10} pathOptions={{ color: "#d90429", fillColor: "#d90429", fillOpacity: 1 }}>
+                                            <Popup><b>Lokasi Kejadian (Citizen)</b></Popup>
+                                        </CircleMarker>
+                                    )}
+
+                                    {officerPos && (
+                                        <CircleMarker center={officerPos} radius={10} pathOptions={{ color: "#1d4ed8", fillColor: "#1d4ed8", fillOpacity: 1 }}>
+                                            <Popup><b>Posisi Petugas</b></Popup>
+                                        </CircleMarker>
+                                    )}
+                                </MapContainer>
                             </div>
                         </div>
 
-                        <div className="dashboard-map-wrapper">
-                            <MapContainer center={center} zoom={13} scrollWheelZoom className="dashboard-map">
-                                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-                                {citizenPos && (
-                                    <CircleMarker center={citizenPos} radius={8} pathOptions={{ color: "#d90429", fillOpacity: 0.9 }}>
-                                        <Popup>
-                                            <b>Citizen</b><br />
-                                            {panic.citizen_name_snap || "-"}<br />
-                                            {panic.citizen_address_snap || ""}
-                                        </Popup>
-                                    </CircleMarker>
-                                )}
-
-                                {officerPos && (
-                                    <CircleMarker center={officerPos} radius={8} pathOptions={{ color: "#1d4ed8", fillOpacity: 0.9 }}>
-                                        <Popup>
-                                            <b>Officer</b><br />
-                                            {panic.assigned_officer_name_snap || "-"}<br />
-                                            Updated: {fmt(panic.officerLastUpdatedAt)}
-                                        </Popup>
-                                    </CircleMarker>
-                                )}
-                            </MapContainer>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: 16 }}>
-                        <h3>Dispatch Targets (Officer yang ditawari)</h3>
-                        {targets.length === 0 ? (
-                            <p>-</p>
-                        ) : (
-                            <div className="table-wrap">
-                                <table className="table">
+                        {/* DISPATCH TARGETS */}
+                        <div className="panic-dispatch-section">
+                            <h3>Petugas Terdekat (Dispatch Targets)</h3>
+                            <div className="dispatch-table-wrapper">
+                                <table className="panic-table">
                                     <thead>
                                         <tr>
-                                            <th>Officer</th>
+                                            <th>Nama Officer</th>
                                             <th>Username</th>
-                                            <th>Distance (m)</th>
+                                            <th>Jarak Saat Alert</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {targets.map((t) => (
-                                            <tr key={t.officerId}>
-                                                <td>{t.nama}</td>
-                                                <td>{t.username}</td>
-                                                <td>{t.distanceM}</td>
-                                            </tr>
-                                        ))}
+                                        {targets.length === 0 ? (
+                                            <tr><td colSpan="3" style={{ textAlign: 'center' }}>Tidak ada data dispatch.</td></tr>
+                                        ) : (
+                                            targets.map((t) => (
+                                                <tr key={t.officerId}>
+                                                    <td>{t.nama}</td>
+                                                    <td>@{t.username}</td>
+                                                    <td>{t.distanceM} meter</td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
-                        )}
-                    </div>
-                </>
-            )}
+                        </div>
+                    </>
+                )}
+            </div>
         </AdminLayout>
     );
 };

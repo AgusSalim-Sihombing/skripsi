@@ -2,16 +2,54 @@
 const db = require("../config/database");
 
 const mustCommunityActive = async (req, res, next) => {
-    const communityId = req.params.id;
-    const [rows] = await db.execute(
-        "SELECT id, status, owner_user_id FROM communities WHERE id = ? LIMIT 1",
-        [communityId]
-    );
-    if (rows.length === 0) return res.status(404).json({ message: "Komunitas tidak ditemukan" });
-    if (rows[0].status !== "active") return res.status(403).json({ message: "Komunitas sedang ditakedown" });
+  try {
+    const communityId = Number(req.params.id);
 
-    req.community = rows[0];
+    if (!communityId) {
+      return res.status(400).json({
+        success: false,
+        message: "ID komunitas tidak valid",
+      });
+    }
+
+    const [rows] = await db.execute(
+      `
+      SELECT id, name, status, takedown_reason
+      FROM communities
+      WHERE id = ?
+      LIMIT 1
+      `,
+      [communityId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Komunitas tidak ditemukan",
+      });
+    }
+
+    const community = rows[0];
+    req.community = community;
+
+    if (community.status !== "active") {
+      return res.status(403).json({
+        success: false,
+        code: "COMMUNITY_TAKEDOWN",
+        message: "Komunitas ini sedang dinonaktifkan oleh admin",
+        community_status: community.status,
+        takedown_reason: community.takedown_reason || "Tidak ada alasan",
+      });
+    }
+
     next();
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Gagal memeriksa status komunitas",
+      error: err.message,
+    });
+  }
 };
 
 const mustMemberApproved = async (req, res, next) => {

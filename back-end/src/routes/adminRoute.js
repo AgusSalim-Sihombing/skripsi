@@ -8,8 +8,10 @@ const authAdmin = require("../middleware/authAdmin");
 // ====== ZONA BAHAYA CRUD ======
 const {
     listZonaBahaya,
+    getZonaBahayaDetailAdmin,
     createZonaBahayaController,
     updateZonaBahayaController,
+    updateZonaBahayaStatusController,
     deleteZonaBahayaController,
     getZonaBahayaVoteSummaryAdmin,
     getZonaBahayaVotesAdmin
@@ -22,21 +24,24 @@ router.get("/dashboard/summary", authAdmin, getSummaryDashboard);
 
 // ========== ZONA BAHAYA CRUD ==========
 router.get("/zona-bahaya", authAdmin, listZonaBahaya);
+router.get("/zona-bahaya/:id", authAdmin, getZonaBahayaDetailAdmin);
 router.post("/zona-bahaya", authAdmin, createZonaBahayaController);
 router.put("/zona-bahaya/:id", authAdmin, updateZonaBahayaController);
+router.patch("/zona-bahaya/:id/status", authAdmin, updateZonaBahayaStatusController);
+router.put("/zona-bahaya/:id/status", authAdmin, updateZonaBahayaStatusController);
 router.delete("/zona-bahaya/:id", authAdmin, deleteZonaBahayaController);
 
 // ========== VOTING ZONA BAHAYA (ADMIN VIEW) ==========
 // ringkasan: total setuju / tidak setuju / persentase
 router.get(
-    "/zona-bahaya/:id_zona/votes-summary",
+    "/zona-bahaya/:id/votes-summary",
     authAdmin,
     getZonaBahayaVoteSummaryAdmin
 );
 
 // list detail semua vote (kalau mau ditampilkan di modal / halaman detail)
 router.get(
-    "/zona-bahaya/:id_zona/votes",
+    "/zona-bahaya/:id/votes",
     authAdmin,
     getZonaBahayaVotesAdmin
 );
@@ -45,8 +50,9 @@ router.get(
 const { requireAuth, requireRole } = require("../middleware/authUsersAdmin");
 const A = require("../controller/comunityAdminController");
 
-router.get("/communities",authAdmin, A.listAllCommunities);
+router.get("/communities", authAdmin, A.listAllCommunities);
 router.get("/communities/:id/messages", authAdmin, A.getCommunityMessages);
+
 router.patch("/communities/:id/takedown", authAdmin, A.takedownCommunity);
 router.patch("/communities/:id/restore", authAdmin, A.restoreCommunity);
 router.patch("/messages/:messageId/delete", authAdmin, A.deleteMessage);

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:mobile_app/theme/app_theme.dart';
+import 'package:mobile_app/widgets/message_popup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -12,7 +14,8 @@ import 'package:mobile_app/config/api_config.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LaporCepatPage extends StatefulWidget {
-  const LaporCepatPage({Key? key}) : super(key: key);
+  // const LaporCepatPage({Key? key}) : super(key: key);
+  const LaporCepatPage({super.key});
 
   @override
   State<LaporCepatPage> createState() => _LaporCepatPageState();
@@ -294,9 +297,10 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data['success'] == true || data['message'] != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Laporan berhasil dikirim')),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(content: Text('Laporan berhasil dikirim')),
+          // );
+          MessagePopup.success(context, "Laporan Berhasil Dikirim");
 
           setState(() {
             _judulController.clear();
@@ -315,11 +319,12 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
             _mapController.move(_userLatLng!, 16);
           }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(data['message'] ?? 'Gagal mengirim laporan'),
-            ),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(
+          //     content: Text(data['message'] ?? 'Gagal mengirim laporan'),
+          //   ),
+          // );
+          MessagePopup.error(context, "Gagal Mengirim Laporan");
         }
       } else if (response.statusCode == 401) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -353,10 +358,12 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
   // ==================== BUILD ====================
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lapor Cepat Kejahatan'),
-        backgroundColor: const Color(0xFF8B5A24),
+        // backgroundColor: const Color(0xFF8B5A24),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -564,11 +571,11 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
                               : '${_selectedDate!.day.toString().padLeft(2, '0')}-'
                                     '${_selectedDate!.month.toString().padLeft(2, '0')}-'
                                     '${_selectedDate!.year}',
-                          style: TextStyle(
-                            color: _selectedDate == null
-                                ? Colors.grey
-                                : Colors.black87,
-                          ),
+                          // style: TextStyle(
+                          //   color: _selectedDate == null
+                          //       ? Colors.grey
+                          //       : Colors.black87,
+                          // ),
                         ),
                       ),
                     ),
@@ -587,11 +594,11 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
                               ? 'Pilih waktu'
                               : '${_selectedTime!.hour.toString().padLeft(2, '0')}:'
                                     '${_selectedTime!.minute.toString().padLeft(2, '0')}',
-                          style: TextStyle(
-                            color: _selectedTime == null
-                                ? Colors.grey
-                                : Colors.black87,
-                          ),
+                          // style: TextStyle(
+                          //   color: _selectedTime == null
+                          //       ? Colors.grey
+                          //       : Colors.black87,
+                          // ),
                         ),
                       ),
                     ),
@@ -611,9 +618,14 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
                   ElevatedButton.icon(
                     onPressed: _pickImage,
                     icon: const Icon(Icons.camera_alt),
-                    label: const Text('Ambil Foto'),
+                    label: const Text(
+                      'Ambil Foto',
+                      // style: TextStyle(color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5A24),
+                      backgroundColor: isDark
+                          ? AppColors.primaryPurple2
+                          : AppColors.accentSoft,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -663,7 +675,9 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
                 child: ElevatedButton(
                   onPressed: _submitting ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5A24),
+                    backgroundColor: isDark
+                        ? AppColors.accentPurple
+                        : AppColors.glowPurple,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -671,10 +685,10 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
                   ),
                   child: Text(
                     _submitting ? 'Mengirim...' : 'Kirim Laporan',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    // style: const TextStyle(
+                    //   color: Colors.white,
+                    //   fontWeight: FontWeight.w600,
+                    // ),
                   ),
                 ),
               ),

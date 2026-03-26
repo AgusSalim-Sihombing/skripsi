@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AdminLayout from "../../../shared/layout/AdminLayout";
-import { getAdminLaporanList } from "../../../../services/laporanCepatService";
+import AdminLayout from "../../../../shared/layout/AdminLayout";
+import { getAdminLaporanList } from "../../../../../services/laporanCepatService";
 
 const AdminLaporanCepatListPage = () => {
     const navigate = useNavigate();
@@ -219,7 +219,7 @@ const AdminLaporanCepatListPage = () => {
                                                 </button>
                                             </td>
                                         </tr>
-                                    ))}
+                                    ))} 
                                 </tbody>
                             </table>
                         </div>

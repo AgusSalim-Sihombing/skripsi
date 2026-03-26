@@ -2,19 +2,22 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' as lat_lng;
 import 'package:http/http.dart' as http;
+import 'package:mobile_app/theme/app_theme.dart';
+import 'package:mobile_app/widgets/message_popup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'crime_incident.dart';
 import 'package:mobile_app/config/api_config.dart';
+import 'package:intl/date_symbol_data_local.dart';
 // sesuaikan baseUrl sama yang lain (lapor cepat, login, dll)
 // const String apiBaseUrl = 'http://10.121.204.17:3000/api';
 
 class ZonaBahayaDetailPage extends StatefulWidget {
   final CrimeIncident incident;
 
-  const ZonaBahayaDetailPage({Key? key, required this.incident})
-    : super(key: key);
+  const ZonaBahayaDetailPage({super.key, required this.incident});
 
   @override
   State<ZonaBahayaDetailPage> createState() => _ZonaBahayaDetailPageState();
@@ -212,7 +215,7 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
     }
   }
 
-  // ============ KIRIM VOTE ============
+  //KIRIM VOTE
   Future<void> _sendVote(String vote) async {
     if (_submittingVote) return;
 
@@ -252,19 +255,29 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
         final successFlag = body['success'];
 
         if (statusFlag == 'success' || successFlag == true) {
-          _showSnack(body['message'] ?? "Vote berhasil disimpan");
+          // _showSnack(body['message'] ?? "Vote berhasil disimpan");
+          MessagePopup.success(context, "Voting Berhasil Disimpan");
           // refresh summary + my_vote dari server
           await _loadVoteSummary();
         } else {
-          _showSnack(body['message'] ?? 'Gagal menyimpan vote');
+          // _showSnack(body['message'] ?? 'Gagal menyimpan vote');
+          MessagePopup.error(context, "Gagal Menyimpan Vote");
         }
       } else {
-        _showSnack(
-          body['message'] ?? 'Gagal menyimpan vote (${res.statusCode})',
+        // _showSnack(
+        //   body['message'] ?? 'Gagal menyimpan vote (${res.statusCode})',
+        // );
+        MessagePopup.error(
+          context,
+          "Gagal Menyimpan Vote, Silahkan Coba Lagi!",
         );
       }
     } catch (e) {
-      _showSnack('Error saat mengirim vote: $e');
+      // _showSnack('Error saat mengirim vote: $e');
+      MessagePopup.error(
+        context,
+        "Kesalahan Server, Silahkan Coba Lagi Nanti.",
+      );
     } finally {
       if (mounted) {
         setState(() => _submittingVote = false);
@@ -360,14 +373,74 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
   @override
   Widget build(BuildContext context) {
     final incident = widget.incident;
+    debugPrint("namaaa : ${incident.namaPelapor}");
     final isPending = incident.status.toLowerCase().contains('pending');
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    // final f = DateFormat('yMd');
+    // Fungsi pembuat baris tabel (Label : Value)
+    TableRow _buildTableRow(String label, String value) {
+      return TableRow(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              ":",
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Fungsi pengekstrak Jam
+    String _extractTime(String rawDate) {
+      try {
+        List<String> parts = rawDate.split(' ');
+        if (parts.length > 1) return parts.last; // Mengambil "16:43"
+        return rawDate;
+      } catch (e) {
+        return "-";
+      }
+    }
+
+    // Fungsi pengekstrak Tanggal
+    String _extractDate(String rawDate) {
+      try {
+        String cleanDate = rawDate.split(' ')[0];
+        DateTime parsedDate = DateTime.parse(cleanDate).toLocal();
+        // Pastikan package intl sudah di-import
+        return DateFormat('dd-MM-yyyy').format(parsedDate);
+      } catch (e) {
+        return "-";
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(incident.title, style: const TextStyle(fontSize: 16)),
-        backgroundColor: const Color(0xFF8B5A24),
+        title: Text("Detail Kejahatan (${incident.title})"),
+        backgroundColor: isDark ? AppColors.bgDeep : Colors.white,
+        elevation: 5,
+        shadowColor: isDark
+            ? Colors.lightBlue.withValues(alpha: 0.5)
+            : Colors.black.withValues(alpha: 0.5),
       ),
       body: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,99 +456,111 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      incident.title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      incident.description,
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                    const SizedBox(height: 8),
+                    // --- HEADER: Judul & Status ---
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // === CHIP STATUS ===
                         Expanded(
-                          child: Container(
-                            // margin = const EdgeInsets.only(right: 4),
-                            child: Chip(
-                              label: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  "Status: ${incident.status.toUpperCase()}",
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              backgroundColor: isPending
-                                  ? Colors.orange
-                                  : Colors.green,
-                              visualDensity: VisualDensity.compact,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
+                          child: Text(
+                            incident.title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-
-                        const SizedBox(width: 6),
-
-                        // === CHIP WAKTU ===
-                        Expanded(
-                          child: Container(
-                            margin: const EdgeInsets.only(left: 4),
-                            child: Chip(
-                              label: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  "Waktu: ${incident.time}",
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              backgroundColor: Colors.blueGrey,
-                              visualDensity: VisualDensity.compact,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
+                        const SizedBox(width: 8),
+                        Chip(
+                          label: Text(
+                            "Status: ${incident.status.toUpperCase()}",
+                            maxLines: 1,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
+                          backgroundColor: isPending
+                              ? Colors.orange
+                              : Colors.green,
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "Koordinat: "
-                      "${incident.position.latitude.toStringAsFixed(5)}, "
-                      "${incident.position.longitude.toStringAsFixed(5)}",
-                      style: const TextStyle(fontSize: 12),
+
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Divider(thickness: 1, color: Colors.black12),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "Radius: ${incident.radiusMeter.toStringAsFixed(0)} meter",
-                      style: const TextStyle(fontSize: 12),
+
+                    // --- BODY: Tabel Informasi ---
+                    Table(
+                      columnWidths: const {
+                        0: IntrinsicColumnWidth(), // Lebar menyesuaikan teks label terpanjang
+                        1: FixedColumnWidth(
+                          16,
+                        ), // Lebar khusus untuk titik dua (:)
+                        2: FlexColumnWidth(), // Mengambil sisa ruang untuk isi data
+                      },
+                      children: [
+                        _buildTableRow("Deskripsi", incident.description),
+                        _buildTableRow(
+                          "Koordinat",
+                          "${incident.position.latitude.toStringAsFixed(5)}, ${incident.position.longitude.toStringAsFixed(5)}",
+                        ),
+                        _buildTableRow(
+                          "Radius",
+                          "${incident.radiusMeter.toStringAsFixed(0)} meter",
+                        ),
+                        _buildTableRow(
+                          "Tingkat Risiko",
+                          incident.riskLevel.toUpperCase(),
+                        ),
+                        if (incident.namaPelapor != null &&
+                            incident.namaPelapor!.isNotEmpty)
+                          _buildTableRow(
+                            "Sumber Laporan",
+                            incident.namaPelapor!,
+                             // <=== Menampilkan nama asli
+                          )
+                        else if (incident.reportSourceId != null)
+                          _buildTableRow(
+                            "Sumber Laporan",
+                            "Anonim (ID: #${incident.reportSourceId})", // <=== Fallback jika nama kosong/dihapus
+                          ),
+                      ],
                     ),
-                    Text(
-                      "Tingkat Risiko: ${incident.riskLevel.toUpperCase()}",
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    if (incident.reportSourceId != null)
-                      Text(
-                        "Sumber Laporan: #${incident.reportSourceId}",
-                        style: const TextStyle(fontSize: 12),
+
+                    const SizedBox(height: 16),
+
+                    // --- FOOTER: Waktu & Tanggal (Kanan Bawah) ---
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _extractTime(incident.time.toString()),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _extractDate(incident.time.toString()),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -483,60 +568,72 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
 
             const SizedBox(height: 12),
 
-            Text(
-              "Foto Kejadian",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-
+            // ==== FOTO KEJADIAN ====
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: _loadingFoto
-                    ? Row(
-                        children: const [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          SizedBox(width: 10),
-                          Text("Memuat foto..."),
-                        ],
-                      )
-                    : _fotoBytes != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: InteractiveViewer(
-                          minScale: 1,
-                          maxScale: 4,
-                          child: Image.memory(
-                            _fotoBytes!,
-                            width: double.infinity,
-                            height: 220,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      )
-                    : Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          _fotoError ?? "Foto tidak tersedia",
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black54,
-                          ),
-                        ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(left: 12, top: 12),
+                    child: Text(
+                      "Foto Kejadian",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                       ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: _loadingFoto
+                        ? Row(
+                            children: const [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Text("Memuat foto..."),
+                            ],
+                          )
+                        : _fotoBytes != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: InteractiveViewer(
+                              minScale: 1,
+                              maxScale: 4,
+                              child: Image.memory(
+                                _fotoBytes!,
+                                width: double.infinity,
+                                height: 220,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _fotoError ?? "Foto tidak tersedia",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                  ),
+                ],
               ),
             ),
 
@@ -624,6 +721,7 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
                 ],
               ),
             ],
+            SizedBox(height: 60),
           ],
         ),
       ),

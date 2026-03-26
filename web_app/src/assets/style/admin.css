@@ -1,4 +1,7 @@
 /* ====== LAYOUT DASHBOARD ====== */
+* {
+    font-family: 'Inter', sans-serif;
+}
 
 .admin-layout {
     display: flex;
@@ -22,7 +25,7 @@
     padding: 1.2rem 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    /* gap: 1rem; */
     border-right: 1px solid #e5e7eb;
     position: fixed;
     height: 100vh;
@@ -103,6 +106,7 @@
 
 .admin-sidebar__item--logout {
     margin-top: auto;
+    margin-bottom: 20%;
     color: #b91c1c;
 }
 
@@ -180,6 +184,13 @@
 
 
 /* ====== HALAMAN ZONA BAHAYA ====== */
+.dashboard-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
 .zona-bahaya-layout {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr);
@@ -197,7 +208,7 @@
 
 /* bagian yang khusus tinggi map */
 .zona-bahaya-map-inner {
-    height: 480px;
+    height: 700px;
 }
 
 .zona-bahaya-map-inner .leaflet-container {
@@ -232,6 +243,8 @@
 .zona-bahaya-form h2 {
     margin: 0 0 0.3rem;
 }
+
+
 
 .zona-form .form-group {
     margin-bottom: 0.75rem;
@@ -276,6 +289,8 @@
 .zona-table-wrapper {
     max-height: 260px;
     overflow: auto;
+    height: auto;
+
 }
 
 .zona-table {
@@ -398,6 +413,15 @@
 /* Wrapper khusus halaman laporan cepat */
 .laporan-cepat-page {
     padding-bottom: 1.5rem;
+    padding: 20px;
+}
+
+.user-page{
+    padding: 20px;
+}
+
+.beranda{
+    padding: 20px;
 }
 
 /* Card generik (bisa dipakai di halaman admin lain juga) */
@@ -889,6 +913,7 @@
     border-radius: 14px;
     padding: 16px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    height: auto;
 }
 
 .dashboard-map-card__header {
@@ -932,11 +957,12 @@
     border-radius: 14px;
     overflow: hidden;
     border: 1px solid #eee;
+    height: 600px;
 }
 
 .dashboard-map {
     width: 100%;
-    height: 420px;
+    height: 100%;
     /* bisa kamu gedein */
 }
 
@@ -946,4 +972,344 @@
     place-items: center;
     color: #666;
     background: #fafafa;
+}
+
+/* BUTTON STYLE */
+.btn {
+    background-color: #1e0191;
+}
+
+.btn-user-delete {
+    background-color: red;
+}
+
+.btn-delete {
+    background-color: red;
+}
+
+/* filer yang ada di menu data pengguna dan officer */
+
+/* Container filter */
+.filter-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem;
+}
+
+/* Styling Dasar Input & Select */
+.filter-input,
+.filter-select {
+    outline: none;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+    background-color: #ffffff;
+    color: #374151;
+    transition: all 0.2s ease-in-out;
+    /* Animasi transisi */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* EFEK MENARIK SAAT FOKUS */
+.filter-input:focus,
+.filter-select:focus {
+    border-color: #3b82f6;
+    /* Warna biru primer */
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    /* Efek glow lembut */
+}
+
+/* Tambahan khusus untuk Select agar lebih rapi */
+.filter-select {
+    cursor: pointer;
+    min-width: 150px;
+    appearance: none;
+    /* Menghilangkan panah default browser di beberapa OS */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+
+.filter-input::placeholder {
+    color: #9ca3af;
+}
+
+/* table data pengguna dan user officer*/
+
+/* Container untuk scroll jika data sangat banyak */
+.table-wrapper {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.simple-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+}
+
+/* Styling Header */
+.simple-table thead tr {
+    background-color: #f3f4f6;
+    color: #374151;
+    text-align: left;
+    font-weight: 600;
+}
+
+.simple-table th {
+    text-align: center;
+}
+
+.simple-table th,
+.simple-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* --- ZEBRA CROSS WARNA DISINI --- */
+.simple-table tbody tr:nth-child(even) {
+    background-color: #0079f31d;
+    /* Ganti warna ini untuk baris genap */
+}
+
+/* Efek Hover agar baris yang ditunjuk lebih jelas */
+.simple-table tbody tr:hover {
+    background-color: #f0f9ff;
+    /* Warna biru muda saat kursor di atas baris */
+    transition: background-color 0.2s ease;
+}
+
+/* Mempercantik Tampilan Tombol di dalam Tabel */
+.btn-sm {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    /* background-color: #2800c7; */
+}
+
+.btn-outline {
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.btn-outline:hover {
+    background: #2563eb;
+    color: white;
+}
+
+/* Table laporan cepat */
+.zona-table tbody tr:nth-child(even) {
+    background-color: #0079f31d;
+    /* Ganti warna ini untuk baris genap */
+}
+
+
+/* table data pengguna mode edit */
+
+.table-edit-container {
+    padding: 1.5rem;
+    background-color: #ffffff;
+    border-radius: 12px;
+    /* Kita hilangkan shadow jika ingin benar-benar polos, 
+       atau biarkan jika ingin efek kartu mengambang */
+    box-shadow: none;
+}
+
+.table-edit-data-identitas {
+    width: 100%;
+    /* KUNCI UTAMA HAPUS BORDER */
+    border: none;
+    border-collapse: collapse;
+}
+
+.table-edit-data-identitas th,
+.table-edit-data-identitas td {
+    /* HAPUS SEMUA GARIS TEPI */
+    border: none !important;
+    padding: 10px 5px;
+    /* Memberikan ruang agar teks tidak rapat */
+}
+
+/* Styling Input agar tetap terlihat meski tabel tidak bergaris */
+.custom-input.form-control {
+    border: 1px solid #f1f5f9;
+    /* Border input dibuat sangat tipis/soft */
+    background-color: #f8fafc;
+    border-radius: 5px;
+    transition: all 0.2s;
+    width: 100%;
+    height: 40px;
+    color: black;
+}
+
+form.control.costum-input:focus {
+    border-color: #3b82f6;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+    font-size: 20px;
+}
+
+.table-edit-data-identitas tbody tr:nth-child(even) {
+    background: #ffffff;
+}
+
+
+/* Zona Bahaya */
+.zona-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: #fff;
+    /* color: black; */
+}
+
+.form-section {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    /* color: black; */
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    /* color: black; */
+}
+
+.form-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+/* Styling Input & Select */
+.form-control {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    background-color: #f8fafc;
+    color: black;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.readonly-input {
+    background-color: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Warna Khusus pada Select */
+.select-color.red {
+    border-left: 5px solid #ef4444;
+}
+
+.select-color.yellow {
+    border-left: 5px solid #f59e0b;
+}
+
+.select-color.black {
+    border-left: 5px solid #000000;
+}
+
+/* Action Buttons */
+.zona-form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-save {
+    background-color: #2563eb;
+    color: white;
+}
+
+.btn-save:hover {
+    background-color: #1d4ed8;
+}
+
+.btn-save:disabled {
+    background-color: #94a3b8;
+}
+
+.btn-reset {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.btn-reset:hover {
+    background-color: #e2e8f0;
+}
+
+.form-row {
+    gap: 20px;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+.zona-bahaya-page {
+    padding: 20px;
+    font-family: 'Inter', sans-serif;
+}
+
+.komunitas-page{
+    padding: 20px;
 }

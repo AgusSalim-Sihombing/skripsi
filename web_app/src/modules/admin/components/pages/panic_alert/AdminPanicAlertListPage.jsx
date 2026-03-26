@@ -2,101 +2,140 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../../../shared/layout/AdminLayout";
 import { fetchPanicAlerts } from "../../../../../services/panicAlertService";
-import "./AdminPanicList.css"
-const fmt = (d) => (d ? new Date(d).toLocaleString() : "-");
+import "./AdminPanicList.css";
+
+const fmt = (d) => (d ? new Date(d).toLocaleString("id-ID") : "-");
 
 const AdminPanicAlertListPage = () => {
     const navigate = useNavigate();
     const [rows, setRows] = useState([]);
     const [status, setStatus] = useState("");
     const [search, setSearch] = useState("");
-    const [page] = useState(1);
-    const [limit] = useState(20);
     const [loading, setLoading] = useState(true);
 
     const load = async () => {
         setLoading(true);
         try {
-            const res = await fetchPanicAlerts({ status, search, page, limit });
+            const res = await fetchPanicAlerts({ status, search, page: 1, limit: 20 });
             if (res?.success) setRows(res.data || []);
             else setRows([]);
         } catch (e) {
-            console.error(e);
             if (e?.response?.status === 401) navigate("/login-admin");
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { load(); }, []); // initial
-    useEffect(() => { load(); }, [status]); // filter status auto load
+    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [status]);
 
     return (
         <AdminLayout>
-            <div className="dashboard-header" style={{color:"black"}}>
-                <h1>Panic Alert</h1>
-                <p>Semua panic button dari masyarakat + officer yang merespon.</p>
-            </div>
+            <div className="panic-page-container">
+                <header className="panic-page-header">
+                    <div className="panic-header-content">
+                        <h1>Panic Alert System</h1>
+                        <p>Monitoring real-time tombol darurat masyarakat dan respon petugas lapangan.</p>
+                    </div>
+                </header>
 
-            <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                    <option value="">Semua Status</option>
-                    <option value="OPEN">OPEN</option>
-                    <option value="ASSIGNED">ASSIGNED</option>
-                    <option value="RESOLVED">RESOLVED</option>
-                </select>
+                <div className="panic-page-filter-card">
+                    <div className="panic-filter-wrapper">
+                        <select
+                            className="panic-input-select"
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                        >
+                            <option value="">Semua Status</option>
+                            <option value="OPEN">🔴 OPEN</option>
+                            <option value="ASSIGNED">🟡 ASSIGNED</option>
+                            <option value="RESOLVED">🟢 RESOLVED</option>
+                        </select>
 
-                <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Cari panicId / nama citizen / officer / username..."
-                    style={{ flex: 1 }}
-                />
-                <button onClick={load}>Cari</button>
-            </div>
-
-            {loading ? (
-                <p>Loading...</p>
-            ) : (
-                <div className="table-wrap">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Status</th>
-                                <th>Masyarakat</th>
-                                <th>Officer</th>
-                                <th>Created</th>
-                                <th>Responded</th>
-                                <th>Resolved</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.length === 0 ? (
-                                <tr><td colSpan="8">Belum ada panic.</td></tr>
-                            ) : (
-                                rows.map((r) => (
-                                    <tr key={r.panicId}>
-                                        <td>{r.panicId}</td>
-                                        <td>{r.status}</td>
-                                        <td>{r.citizenName || "-"} <div style={{ color: "#777", fontSize: 12 }}>{r.citizenUsername || ""}</div></td>
-                                        <td>{r.officerName || "-"} <div style={{ color: "#777", fontSize: 12 }}>{r.officerUsername || ""}</div></td>
-                                        <td>{fmt(r.created_at)}</td>
-                                        <td>{fmt(r.responded_at)}</td>
-                                        <td>{fmt(r.resolved_at)}</td>
-                                        <td>
-                                            <button onClick={() => navigate(`/admin/panic-alert/${r.panicId}`)}>
-                                                Detail
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                        <div className="panic-search-group">
+                            <input
+                                className="panic-input-text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Cari ID, Nama Citizen, Officer..."
+                            />
+                            <button className="panic-btn-search" onClick={load}>Cari</button>
+                        </div>
+                    </div>
                 </div>
-            )}
+
+                {loading ? (
+                    <div className="panic-loading-state">
+                        <div className="panic-spinner"></div>
+                        <p>Sinkronisasi data darurat...</p>
+                    </div>
+                ) : (
+                    <div className="panic-table-card">
+                        <div className="panic-table-wrapper">
+                            <table className="panic-custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Status</th>
+                                        <th>Masyarakat</th>
+                                        <th>Petugas Respon</th>
+                                        <th>Waktu Alert</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rows.length === 0 ? (
+                                        <tr><td colSpan="6" className="panic-empty">Tidak ada alert darurat ditemukan.</td></tr>
+                                    ) : (
+                                        rows.map((r) => (
+                                            <tr key={r.panicId}>
+                                                <td className="panic-td-id">#{r.panicId}</td>
+                                                <td>
+                                                    <span className={`panic-badge panic-badge-${r.status?.toLowerCase()}`}>
+                                                        {r.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="panic-user-info">
+                                                        <span className="panic-user-name">{r.citizenName || "Anonim"}</span>
+                                                        <span className="panic-user-sub">@{r.citizenUsername}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {r.officerName ? (
+                                                        <div className="panic-user-info">
+                                                            <span className="panic-user-name">{r.officerName}</span>
+                                                            <span className="panic-user-sub">@{r.officerUsername}</span>
+                                                        </div>
+                                                    ) : (
+                                                        /* Jika statusnya OPEN dan belum ada petugas, gunakan class blink */
+                                                        <span className={r.status === "OPEN" ? "panic-unassigned-blink" : "panic-unassigned"}>
+                                                            ⚠️ Menunggu Petugas...
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <div className="panic-time-info">
+                                                        <span>{fmt(r.created_at)}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        className="panic-btn-detail"
+                                                        onClick={() => navigate(`/admin/panic-alert/${r.panicId}`)}
+                                                    >
+                                                        Lihat Detail
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
         </AdminLayout>
     );
 };

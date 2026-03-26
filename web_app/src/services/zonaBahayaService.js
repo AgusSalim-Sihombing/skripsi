@@ -2,7 +2,27 @@ import apiClient from "./apiClient";
 
 export const fetchZonaBahaya = async () => {
     const res = await apiClient.get("/admin/zona-bahaya");
-    return res.data; // { success, data: [...] }
+    return res.data;
+};
+
+export const fetchZonaBahayaDetail = async (id) => {
+    const res = await apiClient.get(`/admin/zona-bahaya/${id}`);
+    return res.data;
+};
+
+export const fetchZonaBahayaVoteSummary = async (id) => {
+    const res = await apiClient.get(`/admin/zona-bahaya/${id}/votes-summary`);
+    return res.data;
+};
+
+export const fetchZonaBahayaVotes = async (id) => {
+    const res = await apiClient.get(`/admin/zona-bahaya/${id}/votes`);
+    return res.data;
+};
+
+export const updateZonaBahayaStatus = async (id, payload) => {
+    const res = await apiClient.put(`/admin/zona-bahaya/${id}/status`, payload);
+    return res.data;
 };
 
 export const createZonaBahaya = async (payload) => {

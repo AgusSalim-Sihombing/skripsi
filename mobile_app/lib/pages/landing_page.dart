@@ -1,31 +1,34 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobile_app/config/api_config.dart';
+import 'package:mobile_app/pages/community/community_lobby_page.dart';
 import 'package:mobile_app/pages/lapor_cepat.dart/daftar_laporan_cepat.dart';
 import 'package:mobile_app/pages/lapor_cepat.dart/laporan_cepat.dart';
-import 'package:mobile_app/pages/maps_lokasi_kejahatan/maps_lokasi_kejahatan.dart';
-import 'package:mobile_app/pages/rekap_kriminal/rekap_kriminal_page.dart';
-import 'package:mobile_app/pages/tentang/tentang_aplikasi.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mobile_app/services/socket_service.dart';
-import 'package:mobile_app/widgets/panic_hold_button.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:geolocator/geolocator.dart';
-import 'package:mobile_app/services/background_zone_service.dart';
-import 'package:mobile_app/config/api_config.dart';
-import 'package:mobile_app/services/notification_service.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:mobile_app/pages/login_page.dart';
-import 'package:mobile_app/pages/community/community_lobby_page.dart';
 import 'package:mobile_app/pages/laporan_kepolisian/buat_laporan_kepolisian_page.dart';
 import 'package:mobile_app/pages/laporan_kepolisian/daftar_laporan_kepolisian_page.dart';
+import 'package:mobile_app/pages/login_page.dart';
+import 'package:mobile_app/pages/maps_lokasi_kejahatan/maps_lokasi_kejahatan.dart';
 import 'package:mobile_app/pages/profile_page.dart';
+import 'package:mobile_app/pages/rekap_kriminal/rekap_kriminal_page.dart';
+import 'package:mobile_app/pages/tentang/tentang_aplikasi.dart';
+import 'package:mobile_app/services/background_zone_service.dart';
+import 'package:mobile_app/services/notification_service.dart';
+import 'package:mobile_app/services/socket_service.dart';
+import 'package:mobile_app/theme/app_theme.dart';
+import 'package:mobile_app/theme/theme_controller.dart';
+import 'package:mobile_app/widgets/message_popup.dart';
+import 'package:mobile_app/widgets/panic_hold_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LandingPage extends StatefulWidget {
   final String username;
-  final String token; // ✅ token JWT
-  final String baseUrl; // ✅ root server: http://IP:3001 (tanpa /api)
+  final String token;
+  final String baseUrl;
 
   const LandingPage({
     super.key,
@@ -47,9 +50,75 @@ class _LandingPageState extends State<LandingPage> {
   String _statusVerif = 'pending';
   bool _isEligibleCommunity = false;
 
+  Offset _themeFabOffset = Offset.zero;
+  bool _themeFabReady = false;
+
+  bool _isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true; // Format bukan JWT
+
+      // Decode payload
+      final String normalized = base64Url.normalize(parts[1]);
+      final String payloadString = utf8.decode(base64Url.decode(normalized));
+      final Map<String, dynamic> payloadMap = jsonDecode(payloadString);
+
+      if (!payloadMap.containsKey('exp')) return false;
+
+      // Cek apakah waktu saat ini sudah melewati waktu 'exp'
+      final exp = payloadMap['exp'];
+      final expireDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+
+      return DateTime.now().isAfter(expireDate);
+    } catch (e) {
+      return true; // Jika terjadi error saat decode, anggap expired untuk keamanan
+    }
+  }
+
+  Future<void> _handleExpiredSession() async {
+    // Tampilkan notifikasi
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Sesi login berakhir. Silahkan login ulang."),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+
+    try {
+      // Hentikan service
+      await BackgroundZoneService.stop();
+      _socket.disconnect();
+
+      // Bersihkan sesi lokal
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      if (!mounted) return;
+
+      // Arahkan kembali ke LoginScreen
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      debugPrint("❌ Gagal menangani expired session: $e");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+
+    if (_isTokenExpired(widget.token)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleExpiredSession();
+      });
+      return; // Stop inisialisasi lain jika token sudah mati
+    }
     final svc = FlutterBackgroundService();
 
     svc.on('bg:log').listen((event) {
@@ -68,7 +137,6 @@ class _LandingPageState extends State<LandingPage> {
       debugPrint("✅ [UI] PONG from BG ts=${event?['ts']}");
     });
 
-    // ✅ ping tiap 2 detik biar kita tau UI <-> BG nyambung
     _pingTimer?.cancel();
     _pingTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
       final running = await svc.isRunning();
@@ -86,17 +154,31 @@ class _LandingPageState extends State<LandingPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("✅ Sudah direspon oleh officer: ${officer['nama']}"),
+          content: Text("Sudah direspon oleh officer: ${officer['nama']}"),
         ),
       );
     });
 
-    // biar gak “berantem” sama build awal
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _bootZoneMonitor();
     });
 
     _loadEligibility();
+  }
+
+  bool get _isVerified => _statusVerif == 'verified';
+
+  Future<void> _loadEligibility() async {
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('user_role') ?? '';
+    final verif = prefs.getString('status_verifikasi') ?? 'pending';
+
+    if (!mounted) return;
+    setState(() {
+      _role = role;
+      _statusVerif = verif;
+      _isEligibleCommunity = (role == 'masyarakat' && verif == 'verified');
+    });
   }
 
   void _openCommunity() {
@@ -125,8 +207,6 @@ class _LandingPageState extends State<LandingPage> {
       ),
     );
   }
-
-  bool get _isVerified => _statusVerif == 'verified';
 
   void _guardVerified(String featureName, VoidCallback onAllowed) {
     if (_isVerified) {
@@ -163,21 +243,7 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
-  Future<void> _loadEligibility() async {
-    final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('user_role') ?? '';
-    final verif = prefs.getString('status_verifikasi') ?? 'pending';
-
-    if (!mounted) return;
-    setState(() {
-      _role = role;
-      _statusVerif = verif;
-      _isEligibleCommunity = (role == 'masyarakat' && verif == 'verified');
-    });
-  }
-
   Future<void> _logout() async {
-    // optional confirm
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -195,23 +261,22 @@ class _LandingPageState extends State<LandingPage> {
         ],
       ),
     );
+
     if (ok != true) return;
 
     try {
-      // stop BG zone monitor
       await BackgroundZoneService.stop();
       await Future.delayed(const Duration(milliseconds: 600));
 
-      // disconnect socket
       _socket.disconnect();
 
-      // clear saved session
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
 
       if (!mounted) return;
 
-      // balik ke login (hapus semua route sebelumnya)
+      MessagePopup.success(context, "Logout Berhasil");
+
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -219,6 +284,7 @@ class _LandingPageState extends State<LandingPage> {
       );
     } catch (e) {
       debugPrint("❌ logout error: $e");
+      MessagePopup.error(context, "Logout Error");
     }
   }
 
@@ -226,34 +292,35 @@ class _LandingPageState extends State<LandingPage> {
     try {
       debugPrint("🟡 [UI] boot zone monitor...");
 
-      // 1) init notif (channel only). Permission udah dari LOGIN
       await NotificationService.init();
-
-      // 2) configure BG service (idempotent)
       await BackgroundZoneService.init();
 
-      // 3) cek lokasi (jangan request di sini)
       final enabled = await Geolocator.isLocationServiceEnabled();
       if (!enabled) {
-        debugPrint("⚠️ [UI] GPS mati");
+        debugPrint("[UI] GPS mati");
         return;
       }
 
       final perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) {
-        debugPrint("⚠️ [UI] izin lokasi belum ada (harusnya udah di login)");
+        debugPrint("[UI] izin lokasi belum ada (harusnya udah di login)");
         return;
       }
 
-      // 4) fetch zona
       final res = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/mobile/zona-bahaya'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
+      if (res.statusCode == 401) {
+        debugPrint("[UI] Token expired terdeteksi dari API");
+        _handleExpiredSession();
+        return;
+      }
+
       if (res.statusCode != 200) {
-        debugPrint("❌ [UI] fetch zona gagal: ${res.statusCode} ${res.body}");
+        debugPrint("[UI] fetch zona gagal: ${res.statusCode} ${res.body}");
         return;
       }
 
@@ -265,7 +332,6 @@ class _LandingPageState extends State<LandingPage> {
 
       debugPrint("✅ [UI] BG zones saved: ${zones.length}");
 
-      // 5) HARD RESTART biar gak nyangkut service lama
       final svc = FlutterBackgroundService();
       final running = await svc.isRunning();
 
@@ -291,7 +357,6 @@ class _LandingPageState extends State<LandingPage> {
 
   Future<void> _setupZonaBahayaMonitoring() async {
     try {
-      // ✅ pastiin izin lokasi udah "Always"
       final enabled = await Geolocator.isLocationServiceEnabled();
       if (!enabled) return;
 
@@ -304,17 +369,21 @@ class _LandingPageState extends State<LandingPage> {
         return;
       }
 
-      // ✅ ambil zona dari backend (punya radius_meter)
       final res = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/mobile/zona-bahaya'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
+      if (res.statusCode == 401) {
+        debugPrint("[UI] Token expired terdeteksi dari API");
+        _handleExpiredSession();
+        return;
+      }
+
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         final List data = decoded['data'] as List;
 
-        // ✅ mapping sesuai schema kamu
         final zones = data.map<Map<String, dynamic>>((z) {
           return {
             "id": int.tryParse(z["id_zona"].toString()) ?? 0,
@@ -332,12 +401,82 @@ class _LandingPageState extends State<LandingPage> {
         debugPrint("❌ fetch zona gagal: ${res.statusCode} ${res.body}");
       }
 
-      // ✅ start service (biar jalan walau app di-close)
       await BackgroundZoneService.restartHard();
       debugPrint("✅ [UI] BG service restarted hard");
     } catch (e) {
       debugPrint("❌ _setupZonaBahayaMonitoring error: $e");
     }
+  }
+
+  Widget _buildDraggableThemeButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final media = MediaQuery.of(context);
+    const double btnSize = 56;
+
+    final double safeTop = media.padding.top + 10;
+    final double minX = 8;
+    final double minY = safeTop;
+    final double maxX = media.size.width - btnSize - 8;
+    final double maxY = media.size.height - btnSize - 8;
+
+    if (!_themeFabReady) {
+      _themeFabOffset = Offset(maxX, safeTop);
+      _themeFabReady = true;
+    }
+
+    _themeFabOffset = Offset(
+      _themeFabOffset.dx.clamp(minX, maxX),
+      _themeFabOffset.dy.clamp(minY, maxY),
+    );
+
+    return Positioned(
+      left: _themeFabOffset.dx,
+      top: _themeFabOffset.dy,
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          setState(() {
+            _themeFabOffset = Offset(
+              (_themeFabOffset.dx + details.delta.dx).clamp(minX, maxX),
+              (_themeFabOffset.dy + details.delta.dy).clamp(minY, maxY),
+            );
+          });
+        },
+        onTap: () async {
+          await ThemeController.toggleTheme();
+        },
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: btnSize,
+            height: btnSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark
+                  ? AppColors.surfaceGlass.withOpacity(0.95)
+                  : Colors.white.withOpacity(0.95),
+              border: Border.all(
+                color: isDark
+                    ? AppColors.borderLight2
+                    : Colors.black.withOpacity(0.06),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? AppColors.shadowDark.withOpacity(0.35)
+                      : Colors.black.withOpacity(0.12),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Icon(
+              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              color: isDark ? AppColors.accentLight : AppColors.primaryBlue,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -373,7 +512,7 @@ class _LandingPageState extends State<LandingPage> {
       ),
       _FeatureItem(
         title: "Daftar Laporan Cepat",
-        icon: Icons.flash_on_outlined,
+        icon: Icons.bolt_outlined,
         enabled: _isVerified,
         onTap: () => _guardVerified("Daftar Laporan Cepat", () {
           Navigator.push(
@@ -386,7 +525,6 @@ class _LandingPageState extends State<LandingPage> {
         title: "Rekapan Kriminal",
         icon: Icons.list_alt_outlined,
         onTap: () {
-          // TODO: halaman rekapan kriminal
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const RekapKriminalPage()),
@@ -406,7 +544,6 @@ class _LandingPageState extends State<LandingPage> {
           );
         }),
       ),
-
       _FeatureItem(
         title: "Komunitas",
         icon: Icons.chat_bubble_outline,
@@ -418,12 +555,10 @@ class _LandingPageState extends State<LandingPage> {
           );
         }),
       ),
-
       _FeatureItem(
         title: "Tentang Aplikasi",
         icon: Icons.info_outline,
         onTap: () {
-          // TODO: halaman tentang aplikasi
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const TentangAplikasiPage()),
@@ -432,257 +567,469 @@ class _LandingPageState extends State<LandingPage> {
       ),
     ];
 
-    final pageController = PageController(viewportFraction: 0.9);
+    // final pageController = PageController(viewportFraction: 0.92);
+    // 0.85 berarti item utama mengambil 85% lebar layar, sisanya untuk item kiri/kanan
+    final PageController pageController = PageController(
+      viewportFraction: 0.85,
+    );
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final List<Widget> carouselItems = [
+      _TopInfoCard(
+        title: "APLIKASI SIGAP SIAP MEMBANTU ANDA",
+        subtitle: "Tindak lanjuti segala bentuk kriminal dengan cepat",
+        image: "assets/phone2.png",
+      ),
+      _TopInfoCard(
+        title: "LAPOR DENGAN CEPAT & AMAN",
+        subtitle: "Petugas terdekat akan menerima notifikasi Anda",
+        image: "assets/phone.png",
+      ),
+      _TopInfoCard(
+        title: "PANTAU ZONA RAWAN",
+        subtitle: "Dapatkan informasi wilayah rawan secara real-time",
+        image: "assets/logo.png",
+      ),
+    ];
 
     return Scaffold(
       key: _scaffoldKey,
+      // backgroundColor: Colors.transparent,
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Color(0xFF8B5A24)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const CircleAvatar(radius: 22, child: Icon(Icons.person)),
-                  const SizedBox(height: 10),
-                  Text(
-                    widget.username,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: isDark
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.surfaceGlass, AppColors.surfaceGlass2],
+                  )
+                : const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFFF9FAFF), Colors.white],
                   ),
-                  const SizedBox(height: 4),
-                  const Text("SIGAP", style: TextStyle(color: Colors.white70)),
-                ],
-              ),
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.map_outlined),
-              title: const Text("Maps Lokasi Kejahatan"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CrimeMapPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.flash_on_outlined),
-              title: const Text("Lapor Cepat"),
-              onTap: () {
-                Navigator.pop(context);
-                _guardVerified("Lapor Cepat", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LaporCepatPage()),
-                  );
-                });
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.list_alt_outlined),
-              title: const Text("Daftar Laporan Cepat"),
-              onTap: () {
-                Navigator.pop(context);
-                _guardVerified("Daftar Laporan Cepat", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DaftarLaporanPage(),
-                    ),
-                  );
-                });
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.folder_open_outlined),
-              title: const Text("Daftar Laporan Polisi"),
-              onTap: () {
-                Navigator.pop(context);
-                _guardVerified("Daftar Laporan Polisi", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DaftarLaporanKepolisianPage(),
-                    ),
-                  );
-                });
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.chat_bubble_outline),
-              title: const Text("Komunitas"),
-              onTap: () {
-                Navigator.pop(context);
-                _openCommunity();
-              },
-            ),
-
-            const Divider(),
-
-            // ✅ Logout
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text("Logout", style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _logout();
-              },
-            ),
-          ],
-        ),
-      ),
-      backgroundColor: const Color(0xFFF4F4F4),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ---------- HEADER ----------
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () {
-                      _scaffoldKey.currentState?.openDrawer();
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "Selamat Datang, ${widget.username}",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ProfilePage()),
-                      );
-                      // ✅ habis balik dari profile, reload status
-                      await _loadEligibility();
-                    },
-                    borderRadius: BorderRadius.circular(99),
-                    child: const CircleAvatar(
-                      radius: 18,
-                      child: Icon(Icons.person),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+          ),
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 54, 16, 20),
+                decoration: BoxDecoration(
+                  gradient: isDark
+                      ? AppGradients.loginButton
+                      : const LinearGradient(
+                          colors: [Color(0xFF8B5A24), Color(0xFFAA7740)],
+                        ),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ---------- SLIDER CARD ATAS ----------
-                    SizedBox(
-                      height: 150,
-                      child: PageView(
-                        controller: pageController,
-                        children: const [
-                          _TopInfoCard(
-                            title: "APLIKASI SIAGA SIAP MEMBANTU ANDA",
-                            subtitle: "Tindak Lanjuti Segala Bentuk Kriminal",
-                          ),
-                          _TopInfoCard(
-                            title: "LAPOR DENGAN CEPAT & AMAN",
-                            subtitle:
-                                "Petugas terdekat akan menerima notifikasi Anda",
-                          ),
-                          _TopInfoCard(
-                            title: "LAPOR DENGAN CEPAT & AMAN",
-                            subtitle:
-                                "Petugas terdekat akan menerima notifikasi Anda",
-                          ),
-                        ],
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.white.withOpacity(0.18),
+                      child: const Icon(Icons.person, color: Colors.white),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.username,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // ---------- GRID 6 FITUR ----------
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: featureItems.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 0.9,
-                          ),
-                      itemBuilder: (context, index) {
-                        final item = featureItems[index];
-                        return _FeatureCard(item: item);
-                      },
+                    const SizedBox(height: 4),
+                    Text(
+                      "Role: ${_role.isEmpty ? '-' : _role} • Status: $_statusVerif",
+                      style: const TextStyle(color: Colors.white70),
                     ),
-
-                    const SizedBox(height: 32),
-
-                    // ---------- PANIC BUTTON ----------
-                    SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: PanicHoldButton(
-                        token: widget.token,
-                        baseUrl: widget.baseUrl,
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
+
+              _DrawerTile(
+                icon: Icons.map_outlined,
+                title: "Maps Lokasi Kejahatan",
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CrimeMapPage()),
+                  );
+                },
+              ),
+              _DrawerTile(
+                icon: Icons.flash_on_outlined,
+                title: "Lapor Cepat",
+                onTap: () {
+                  Navigator.pop(context);
+                  _guardVerified("Lapor Cepat", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LaporCepatPage()),
+                    );
+                  });
+                },
+              ),
+              _DrawerTile(
+                icon: Icons.list_alt_outlined,
+                title: "Daftar Laporan Cepat",
+                onTap: () {
+                  Navigator.pop(context);
+                  _guardVerified("Daftar Laporan Cepat", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DaftarLaporanPage(),
+                      ),
+                    );
+                  });
+                },
+              ),
+              _DrawerTile(
+                icon: Icons.folder_open_outlined,
+                title: "Daftar Laporan Polisi",
+                onTap: () {
+                  Navigator.pop(context);
+                  _guardVerified("Daftar Laporan Polisi", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DaftarLaporanKepolisianPage(),
+                      ),
+                    );
+                  });
+                },
+              ),
+              _DrawerTile(
+                icon: Icons.chat_bubble_outline,
+                title: "Komunitas",
+                onTap: () {
+                  Navigator.pop(context);
+                  _openCommunity();
+                },
+              ),
+
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Divider(),
+              ),
+
+              ValueListenableBuilder<ThemeMode>(
+                valueListenable: ThemeController.themeMode,
+                builder: (context, mode, _) {
+                  final darkSelected = mode == ThemeMode.dark;
+
+                  return SwitchListTile.adaptive(
+                    value: darkSelected,
+                    onChanged: (value) async {
+                      await ThemeController.setThemeMode(
+                        value ? ThemeMode.dark : ThemeMode.light,
+                      );
+                    },
+                    secondary: Icon(
+                      darkSelected
+                          ? Icons.dark_mode_rounded
+                          : Icons.light_mode_rounded,
+                      color: darkSelected
+                          ? AppColors.accentLight
+                          : AppColors.primaryBlue,
+                    ),
+                    title: Text(darkSelected ? "Mode Gelap" : "Mode Terang"),
+                  );
+                },
+              ),
+
+              _DrawerTile(
+                icon: Icons.logout,
+                title: "Logout",
+                danger: true,
+                onTap: () {
+                  Navigator.pop(context);
+                  _logout();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? AppGradients.background
+                  : const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFF7F9FF), Color(0xFFFFFFFF)],
+                    ),
+            ),
+          ),
+
+          if (isDark) ...[
+            Positioned(
+              top: -60,
+              right: -40,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.accentPurple.withOpacity(0.12),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -80,
+              left: -60,
+              child: Container(
+                width: 260,
+                height: 260,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryBlue.withOpacity(0.10),
+                ),
+              ),
             ),
           ],
-        ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.surfaceGlass.withOpacity(0.85)
+                          : Colors.white.withOpacity(0.92),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.borderLight2
+                            : Colors.black.withOpacity(0.05),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark
+                              ? AppColors.shadowDark.withOpacity(0.22)
+                              : Colors.black.withOpacity(0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.menu,
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : Colors.black87,
+                          ),
+                          onPressed: () {
+                            _scaffoldKey.currentState?.openDrawer();
+                          },
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            "Selamat Datang, ${widget.username}",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? AppColors.textPrimary
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProfilePage(),
+                              ),
+                            );
+                            await _loadEligibility();
+                          },
+                          borderRadius: BorderRadius.circular(99),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark
+                                  ? AppColors.white05
+                                  : const Color(0xFFF1F4FB),
+                            ),
+                            child: Icon(
+                              Icons.person,
+                              size: 20,
+                              color: isDark
+                                  ? AppColors.textPrimary
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    // Padding horizontal dihapus dari sini agar carousel bisa menyentuh pinggir tepi layar
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(0),
+                          height: 200,
+                          // Menggunakan PageView.builder dipadukan dengan AnimatedBuilder
+                          child: PageView.builder(
+                            controller: pageController,
+                            itemCount: carouselItems.length,
+                            itemBuilder: (context, index) {
+                              return AnimatedBuilder(
+                                animation: pageController,
+                                builder: (context, child) {
+                                  double value = 1.0;
+
+                                  // Logika untuk menghitung skala (perbesar/perkecil) berdasarkan posisi geser
+                                  if (pageController.position.haveDimensions) {
+                                    value = pageController.page! - index;
+                                    // Semakin jauh dari tengah, skalanya semakin mengecil hingga maksimal 0.85
+                                    value = (1 - (value.abs() * 0.15)).clamp(
+                                      0.85,
+                                      1.0,
+                                    );
+                                  } else {
+                                    // Fallback saat pertama kali render (index 0 skala penuh, sisanya mengecil)
+                                    value = index == 0 ? 1.0 : 0.85;
+                                  }
+
+                                  return Center(
+                                    child: Transform.scale(
+                                      scale: Curves.easeOut.transform(value),
+                                      child:
+                                          child, // child ini adalah carouselItems[index]
+                                    ),
+                                  );
+                                },
+                                child: carouselItems[index],
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Tambahkan padding horizontal di sini untuk GridView
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: featureItems.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  childAspectRatio: 0.9,
+                                ),
+                            itemBuilder: (context, index) {
+                              final item = featureItems[index];
+                              return _FeatureCard(item: item);
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // Tambahkan padding horizontal di sini untuk Tombol
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: PanicHoldButton(
+                            token: widget.token,
+                            baseUrl: widget.baseUrl,
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// ===================================================================
-//  WIDGET KARTU ATAS (COLORED SLIDER)
-// ===================================================================
 class _TopInfoCard extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String image;
 
-  const _TopInfoCard({required this.title, required this.subtitle});
+  const _TopInfoCard({
+    required this.title,
+    required this.subtitle,
+    required this.image,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(right: 8, bottom: 20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF8B5A24), // coklat
-        borderRadius: BorderRadius.circular(20),
+        gradient: isDark
+            ? AppGradients.loginButton
+            : const LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Color.fromARGB(255, 255, 255, 255),
+                  Color.fromARGB(255, 219, 219, 219),
+                ],
+              ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? AppColors.shadowDark.withValues(alpha: 0.28)
+                : Colors.black.withOpacity(0.10),
+            blurRadius: 5,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          // teks kiri
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -691,31 +1038,25 @@ class _TopInfoCard extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.white,
+                    // color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
+                Text(subtitle, style: const TextStyle(fontSize: 12)),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          // ilustrasi dummy kanan (pakai icon dulu)
-          const Icon(Icons.shield_moon_outlined, color: Colors.white, size: 60),
+          // Image.asset("assets/phone2.png", fit: BoxFit.contain),
+          Image.asset(image, fit: BoxFit.contain),
         ],
       ),
     );
   }
 }
 
-// ===================================================================
-//  MODEL & CARD UNTUK FITUR
-// ===================================================================
 class _FeatureItem {
   final String title;
   final IconData icon;
@@ -738,21 +1079,31 @@ class _FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = !item.enabled;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
-      onTap: item.onTap, // tetap bisa tap biar muncul dialog
+      onTap: item.onTap,
       borderRadius: BorderRadius.circular(18),
       child: Opacity(
-        opacity: disabled ? 0.55 : 1,
+        opacity: disabled ? 0.58 : 1,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark
+                ? AppColors.bgPurpleDark.withValues(alpha: 0.40)
+                : Colors.white,
             borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isDark
+                  ? AppColors.borderLight2
+                  : Colors.black.withOpacity(0.04),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
+                color: isDark
+                    ? Colors.lightBlue.withValues(alpha: 0.20)
+                    : Colors.black.withOpacity(0.05),
+                blurRadius: 2,
+                offset: const Offset(1, 2),
               ),
             ],
           ),
@@ -763,20 +1114,24 @@ class _FeatureCard extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(item.icon, color: const Color(0xFF8B5A24), size: 30),
+                    Icon(
+                      item.icon,
+                      color: isDark ? AppColors.primaryBlue : AppColors.bgDeep,
+                      size: 30,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       item.title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.textPrimary : Colors.black87,
                       ),
                     ),
                   ],
                 ),
               ),
-
               if (disabled)
                 Positioned(
                   right: 6,
@@ -787,18 +1142,26 @@ class _FeatureCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.10),
+                      color: isDark
+                          ? AppColors.white08
+                          : Colors.black.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.lock, size: 12, color: Colors.black54),
-                        SizedBox(width: 4),
+                        Icon(
+                          Icons.lock,
+                          size: 12,
+                          color: isDark ? AppColors.textMuted2 : Colors.black54,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
                           "Locked",
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.black54,
+                            color: isDark
+                                ? AppColors.textMuted2
+                                : Colors.black54,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -810,6 +1173,38 @@ class _FeatureCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DrawerTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool danger;
+
+  const _DrawerTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final color = danger
+        ? AppColors.danger
+        : (isDark ? AppColors.textPrimary : Colors.black87);
+
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: TextStyle(color: color, fontWeight: FontWeight.w600),
+      ),
+      onTap: onTap,
     );
   }
 }

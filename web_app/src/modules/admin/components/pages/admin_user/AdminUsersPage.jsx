@@ -225,328 +225,328 @@ const AdminUsersPage = ({ title = "Data Pengguna", defaultRole = "" }) => {
 
     return (
         <AdminLayout>
-            <div className="dashboard-header">
-                <h1>{title}</h1>
-                <p>
-                    Kelola data pengguna, verifikasi identitas, dan lihat foto KTP untuk
-                    mengatur role & status verifikasi.
-                </p>
-            </div>
-
-            {/* FILTER + ADD BUTTON */}
-            <div className="card" style={{ marginBottom: "1rem" }}>
-                <div
-                    className="filter-row"
-                    style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
-                >
-                    <input
-                        type="text"
-                        name="search"
-                        placeholder="Cari nama / NIK / username / email..."
-                        value={filters.search}
-                        onChange={handleFilterChange}
-                        style={{ flex: 1, backgroundColor: "#f9fafb", border: "1px solid #d1d5db", borderRadius: 4, padding: "0.5rem" }}
-                    />
-                    <select
-                        name="role"
-                        value={filters.role}
-                        onChange={handleFilterChange}
-                    >
-                        <option value="">Semua Role</option>
-                        <option value="masyarakat">Masyarakat</option>
-                        <option value="officer">Officer</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <select
-                        name="status_verifikasi"
-                        value={filters.status_verifikasi}
-                        onChange={handleFilterChange}
-                    >
-                        <option value="">Semua Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="verified">Verified</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-
-                    <Button variant="primary" onClick={openCreateModal}>
-                        + Tambah User
-                    </Button>
+            <div className="user-page">
+                <div className="dashboard-header">
+                    <h1>{title}</h1>
+                    <p>
+                        Kelola data pengguna, verifikasi identitas, dan lihat foto KTP untuk
+                        mengatur role & status verifikasi.
+                    </p>
                 </div>
-            </div>
 
-            {errorMsg && <div className="alert alert--error">{errorMsg}</div>}
-            {successMsg && <div className="alert alert--success">{successMsg}</div>}
+                {/* FILTER  */}
+                <div className="card" style={{ marginBottom: "1rem", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+                    <div className="filter-row">
+                        <input
+                            type="text"
+                            name="search"
+                            className="filter-input"
+                            placeholder="Cari nama / NIK / username / email..."
+                            value={filters.search}
+                            onChange={handleFilterChange}
+                            style={{ flex: 1 }} // Biar input tetap fleksibel memanjang
+                        />
 
-            {/* TABLE */}
-            <div className="card" style={{ color: "black" }}>
-                {loading ? (
-                    <p>Memuat data pengguna...</p>
-                ) : users.length === 0 ? (
-                    <p>Tidak ada data pengguna.</p>
-                ) : (
-                    <div className="table-wrapper">
-                        <table className="simple-table">
-                            <thead>
-                                <tr>
-                                    <th>NIK</th>
-                                    <th>Nama</th>
-                                    <th>Username</th>
-                                    <th>Role</th>
-                                    <th>Status Verifikasi</th>
-                                    <th>Kontak</th>
-                                    <th>Created</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users.map((u) => (
-                                    <tr key={u.id}>
-                                        <td>{u.nik}</td>
-                                        <td>{u.nama}</td>
-                                        <td>{u.username}</td>
-                                        <td style={{ textTransform: "capitalize" }}>{u.role}</td>
-                                        <td>{u.status_verifikasi}</td>
-                                        <td>
-                                            {u.phone || "-"}
-                                            <br />
-                                            <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>
-                                                {u.email || ""}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {u.created_at
-                                                ? new Date(u.created_at).toLocaleDateString()
-                                                : "-"}
-                                        </td>
-                                        <td>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline btn-sm"
-                                                onClick={() => navigate(`/admin/users/${u.id}`)}
-                                            >
-                                                Detail & Verifikasi
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-secondary"
-                                                style={{
-                                                    padding: "0.2rem 0.5rem",
-                                                    fontSize: "0.8rem",
-                                                    marginLeft: "0.3rem",
-                                                }}
-                                                onClick={() => handleDelete(u)}
-                                            >
-                                                Hapus
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <select
+                            name="role"
+                            className="filter-select"
+                            value={filters.role}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="">Semua Role</option>
+                            <option value="masyarakat">Masyarakat</option>
+                            <option value="officer">Officer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+
+                        <select
+                            name="status_verifikasi"
+                            className="filter-select"
+                            value={filters.status_verifikasi}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="">Semua Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="verified">Verified</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
                     </div>
-                )}
-            </div>
+                </div>
 
-            {/* MODAL CREATE / EDIT */}
-            <Modal show={showModal} onHide={closeModal} centered size="lg">
-                <Form onSubmit={handleSubmit}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>
-                            {modalMode === "create" ? "Tambah User" : "Detail User & Verifikasi"}
-                        </Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body className="user-detail-modal">
-                        {modalMode === "edit" && selectedUser && (
-                            <>
-                                {/* DATA + FOTO KTP */}
-                                <div className="user-detail-grid">
-                                    {/* KOLUM KIRI: DATA USER */}
-                                    <div className="user-detail-left">
-                                        <h5 className="mb-3">Data Identitas</h5>
-                                        <dl className="user-detail-dl">
-                                            <div className="user-detail-row">
-                                                <dt>NIK</dt>
-                                                <dd>{selectedUser.nik || "-"}</dd>
-                                            </div>
-                                            <div className="user-detail-row">
-                                                <dt>Nama</dt>
-                                                <dd>{selectedUser.nama || "-"}</dd>
-                                            </div>
-                                            <div className="user-detail-row">
-                                                <dt>Username</dt>
-                                                <dd>{selectedUser.username || "-"}</dd>
-                                            </div>
-                                            <div className="user-detail-row">
-                                                <dt>Tempat, Tgl Lahir</dt>
-                                                <dd>
-                                                    {(selectedUser.tempat_lahir || "-") +
-                                                        ", " +
-                                                        (selectedUser.tanggal_lahir || "-")}
-                                                </dd>
-                                            </div>
-                                            <div className="user-detail-row">
-                                                <dt>Alamat</dt>
-                                                <dd>{selectedUser.alamat || "-"}</dd>
-                                            </div>
-                                            <div className="user-detail-row">
-                                                <dt>Phone</dt>
-                                                <dd>{selectedUser.phone || "-"}</dd>
-                                            </div>
-                                            <div className="user-detail-row">
-                                                <dt>Email</dt>
-                                                <dd>{selectedUser.email || "-"}</dd>
-                                            </div>
-                                        </dl>
-                                    </div>
+                {errorMsg && <div className="alert alert--error">{errorMsg}</div>}
+                {successMsg && <div className="alert alert--success">{successMsg}</div>}
 
-                                    {/* KOLUM KANAN: FOTO KTP */}
-                                    <div className="user-detail-right">
-                                        <h5 className="mb-3 text-center">Foto KTP</h5>
-                                        <div className="ktp-preview">
-                                            <img
-                                                src={`${API_BASE_URL}/admin/users/${selectedUser.id}/ktp`}
-                                                alt="Foto KTP"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = "none";
-                                                }}
-                                            />
+                {/* TABLE */}
+                <div className="card" style={{ color: "black" }}>
+                    {loading ? (
+                        <p>Memuat data pengguna...</p>
+                    ) : users.length === 0 ? (
+                        <p>Tidak ada data pengguna.</p>
+                    ) : (
+                        <div className="table-wrapper">
+                            <table className="simple-table" >
+                                <thead>
+                                    <tr>
+                                        <th>NIK</th>
+                                        <th>Nama</th>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Status Verifikasi</th>
+                                        <th>Kontak</th>
+                                        <th>Created</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody >
+                                    {users.map((u) => (
+                                        <tr key={u.id}>
+                                            <td>{u.nik}</td>
+                                            <td>{u.nama}</td>
+                                            <td>{u.username}</td>
+                                            <td style={{ textTransform: "capitalize" }}>{u.role}</td>
+                                            <td>{u.status_verifikasi}</td>
+                                            <td>
+                                                {u.phone || "-"}
+                                                <br />
+                                                <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+                                                    {u.email || ""}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {u.created_at
+                                                    ? new Date(u.created_at).toLocaleDateString()
+                                                    : "-"}
+                                            </td>
+                                            <td style={{ display: "flex", justifyContent: "center" }}>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline btn-sm"
+                                                    onClick={() => navigate(`/admin/users/${u.id}`)}
+                                                >
+                                                    Detail & Verifikasi
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-secondary btn-user-delete"
+                                                    style={{
+                                                        padding: "0.2rem 0.5rem",
+                                                        fontSize: "0.8rem",
+                                                        marginLeft: "0.3rem",
+                                                    }}
+                                                    onClick={() => handleDelete(u)}
+                                                >
+                                                    Hapus
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+                {/* MODAL CREATE / EDIT */}
+                <Modal show={showModal} onHide={closeModal} centered size="lg">
+                    <Form onSubmit={handleSubmit}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>
+                                {modalMode === "create" ? "Tambah User" : "Detail User & Verifikasi"}
+                            </Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body className="user-detail-modal">
+                            {modalMode === "edit" && selectedUser && (
+                                <>
+                                    {/* DATA + FOTO KTP */}
+                                    <div className="user-detail-grid">
+                                        {/* KOLUM KIRI: DATA USER */}
+                                        <div className="user-detail-left">
+                                            <h5 className="mb-3">Data Identitas</h5>
+                                            <dl className="user-detail-dl">
+                                                <div className="user-detail-row">
+                                                    <dt>NIK</dt>
+                                                    <dd>{selectedUser.nik || "-"}</dd>
+                                                </div>
+                                                <div className="user-detail-row">
+                                                    <dt>Nama</dt>
+                                                    <dd>{selectedUser.nama || "-"}</dd>
+                                                </div>
+                                                <div className="user-detail-row">
+                                                    <dt>Username</dt>
+                                                    <dd>{selectedUser.username || "-"}</dd>
+                                                </div>
+                                                <div className="user-detail-row">
+                                                    <dt>Tempat, Tgl Lahir</dt>
+                                                    <dd>
+                                                        {(selectedUser.tempat_lahir || "-") +
+                                                            ", " +
+                                                            (selectedUser.tanggal_lahir || "-")}
+                                                    </dd>
+                                                </div>
+                                                <div className="user-detail-row">
+                                                    <dt>Alamat</dt>
+                                                    <dd>{selectedUser.alamat || "-"}</dd>
+                                                </div>
+                                                <div className="user-detail-row">
+                                                    <dt>Phone</dt>
+                                                    <dd>{selectedUser.phone || "-"}</dd>
+                                                </div>
+                                                <div className="user-detail-row">
+                                                    <dt>Email</dt>
+                                                    <dd>{selectedUser.email || "-"}</dd>
+                                                </div>
+                                            </dl>
                                         </div>
-                                        <p className="ktp-caption">
-                                            Jika gambar tidak muncul, pastikan user mengupload KTP saat
-                                            registrasi.
-                                        </p>
+
+                                        {/* KOLUM KANAN: FOTO KTP */}
+                                        <div className="user-detail-right">
+                                            <h5 className="mb-3 text-center">Foto KTP</h5>
+                                            <div className="ktp-preview">
+                                                <img
+                                                    src={`${API_BASE_URL}/admin/users/${selectedUser.id}/ktp`}
+                                                    alt="Foto KTP"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = "none";
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="ktp-caption">
+                                                Jika gambar tidak muncul, pastikan user mengupload KTP saat
+                                                registrasi.
+                                            </p>
+                                        </div>
                                     </div>
+
+                                    <hr className="mt-3 mb-3" />
+                                </>
+                            )}
+
+                            {/* FORM CREATE ATAU VERIFIKASI */}
+                            {errorMsg && (
+                                <div className="alert alert--error" style={{ marginBottom: 8 }}>
+                                    {errorMsg}
+                                </div>
+                            )}
+
+                            {modalMode === "create" && (
+                                <>
+                                    <h5 className="mb-3">Data Akun Baru</h5>
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>NIK</Form.Label>
+                                        <Form.Control
+                                            name="nik"
+                                            value={form.nik}
+                                            onChange={handleFormChange}
+                                        />
+                                    </Form.Group>
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>Nama Lengkap</Form.Label>
+                                        <Form.Control
+                                            name="nama"
+                                            value={form.nama}
+                                            onChange={handleFormChange}
+                                        />
+                                    </Form.Group>
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>Username</Form.Label>
+                                        <Form.Control
+                                            name="username"
+                                            value={form.username}
+                                            onChange={handleFormChange}
+                                        />
+                                    </Form.Group>
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>Password</Form.Label>
+                                        <Form.Control
+                                            type="password"
+                                            name="password"
+                                            value={form.password}
+                                            onChange={handleFormChange}
+                                        />
+                                    </Form.Group>
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>Phone</Form.Label>
+                                        <Form.Control
+                                            name="phone"
+                                            value={form.phone}
+                                            onChange={handleFormChange}
+                                        />
+                                    </Form.Group>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Email</Form.Label>
+                                        <Form.Control
+                                            name="email"
+                                            value={form.email}
+                                            onChange={handleFormChange}
+                                        />
+                                    </Form.Group>
+                                </>
+                            )}
+
+                            <h5 className="mb-3">
+                                {modalMode === "create" ? "Role & Status Awal" : "Verifikasi & Role"}
+                            </h5>
+
+                            <div className="verify-grid">
+                                <div className="verify-left">
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>Role Pengguna</Form.Label>
+                                        <Form.Select
+                                            name="role"
+                                            value={form.role}
+                                            onChange={handleFormChange}
+                                        >
+                                            <option value="masyarakat">Masyarakat</option>
+                                            <option value="officer">Officer</option>
+                                            <option value="admin">Admin</option>
+                                        </Form.Select>
+                                    </Form.Group>
+
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>Status Verifikasi</Form.Label>
+                                        <Form.Select
+                                            name="status_verifikasi"
+                                            value={form.status_verifikasi}
+                                            onChange={handleFormChange}
+                                        >
+                                            <option value="pending">Pending</option>
+                                            <option value="verified">Verified</option>
+                                            <option value="rejected">Rejected</option>
+                                        </Form.Select>
+                                    </Form.Group>
                                 </div>
 
-                                <hr className="mt-3 mb-3" />
-                            </>
-                        )}
-
-                        {/* FORM CREATE ATAU VERIFIKASI */}
-                        {errorMsg && (
-                            <div className="alert alert--error" style={{ marginBottom: 8 }}>
-                                {errorMsg}
+                                <div className="verify-right">
+                                    <Form.Group className="mb-2">
+                                        <Form.Label>Catatan Verifikasi</Form.Label>
+                                        <Form.Control
+                                            as="textarea"
+                                            rows={modalMode === "create" ? 2 : 4}
+                                            name="catatan_verifikasi"
+                                            value={form.catatan_verifikasi}
+                                            onChange={handleFormChange}
+                                            placeholder="Tuliskan alasan approve / reject (opsional)"
+                                        />
+                                    </Form.Group>
+                                </div>
                             </div>
-                        )}
+                        </Modal.Body>
 
-                        {modalMode === "create" && (
-                            <>
-                                <h5 className="mb-3">Data Akun Baru</h5>
-                                <Form.Group className="mb-2">
-                                    <Form.Label>NIK</Form.Label>
-                                    <Form.Control
-                                        name="nik"
-                                        value={form.nik}
-                                        onChange={handleFormChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Nama Lengkap</Form.Label>
-                                    <Form.Control
-                                        name="nama"
-                                        value={form.nama}
-                                        onChange={handleFormChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Username</Form.Label>
-                                    <Form.Control
-                                        name="username"
-                                        value={form.username}
-                                        onChange={handleFormChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Password</Form.Label>
-                                    <Form.Control
-                                        type="password"
-                                        name="password"
-                                        value={form.password}
-                                        onChange={handleFormChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Phone</Form.Label>
-                                    <Form.Control
-                                        name="phone"
-                                        value={form.phone}
-                                        onChange={handleFormChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Email</Form.Label>
-                                    <Form.Control
-                                        name="email"
-                                        value={form.email}
-                                        onChange={handleFormChange}
-                                    />
-                                </Form.Group>
-                            </>
-                        )}
-
-                        <h5 className="mb-3">
-                            {modalMode === "create" ? "Role & Status Awal" : "Verifikasi & Role"}
-                        </h5>
-
-                        <div className="verify-grid">
-                            <div className="verify-left">
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Role Pengguna</Form.Label>
-                                    <Form.Select
-                                        name="role"
-                                        value={form.role}
-                                        onChange={handleFormChange}
-                                    >
-                                        <option value="masyarakat">Masyarakat</option>
-                                        <option value="officer">Officer</option>
-                                        <option value="admin">Admin</option>
-                                    </Form.Select>
-                                </Form.Group>
-
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Status Verifikasi</Form.Label>
-                                    <Form.Select
-                                        name="status_verifikasi"
-                                        value={form.status_verifikasi}
-                                        onChange={handleFormChange}
-                                    >
-                                        <option value="pending">Pending</option>
-                                        <option value="verified">Verified</option>
-                                        <option value="rejected">Rejected</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </div>
-
-                            <div className="verify-right">
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Catatan Verifikasi</Form.Label>
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={modalMode === "create" ? 2 : 4}
-                                        name="catatan_verifikasi"
-                                        value={form.catatan_verifikasi}
-                                        onChange={handleFormChange}
-                                        placeholder="Tuliskan alasan approve / reject (opsional)"
-                                    />
-                                </Form.Group>
-                            </div>
-                        </div>
-                    </Modal.Body>
-
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={closeModal}>
-                            Tutup
-                        </Button>
-                        <Button type="submit" variant="primary" disabled={saving}>
-                            {saving
-                                ? "Menyimpan..."
-                                : modalMode === "create"
-                                    ? "Tambah User"
-                                    : "Simpan Perubahan"}
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={closeModal}>
+                                Tutup
+                            </Button>
+                            <Button type="submit" variant="primary" disabled={saving}>
+                                {saving
+                                    ? "Menyimpan..."
+                                    : modalMode === "create"
+                                        ? "Tambah User"
+                                        : "Simpan Perubahan"}
+                            </Button>
+                        </Modal.Footer>
+                    </Form>
+                </Modal>
+            </div>
         </AdminLayout>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../../shared/layout/AdminLayout";
 import { fetchZonaBahaya } from "../../../../services/zonaBahayaService";
 
@@ -7,9 +8,10 @@ const ZonaBahayaListPage = () => {
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState("");
 
-    // filter state
     const [search, setSearch] = useState("");
     const [risiko, setRisiko] = useState("semua");
+
+    const navigate = useNavigate();
 
     const loadZones = async () => {
         setLoading(true);
@@ -60,12 +62,11 @@ const ZonaBahayaListPage = () => {
             <div className="dashboard-header">
                 <h1>Semua Zona Bahaya</h1>
                 <p>
-                    Daftar lengkap zona bahaya yang telah ditandai oleh admin. Gunakan
+                    Daftar lengkap zona bahaya yang telah ditandai. Gunakan
                     pencarian dan filter untuk mempermudah pengecekan.
                 </p>
             </div>
 
-            {/* FILTER BAR */}
             <form
                 className="laporan-filter-form"
                 onSubmit={(e) => e.preventDefault()}
@@ -95,7 +96,6 @@ const ZonaBahayaListPage = () => {
                 </div>
             </form>
 
-            {/* TABLE LIST */}
             <div style={{ marginTop: "1rem" }}>
                 {loading ? (
                     <p>Memuat data zona bahaya...</p>
@@ -112,10 +112,12 @@ const ZonaBahayaListPage = () => {
                                 <tr>
                                     <th>Nama Zona</th>
                                     <th>Risiko</th>
+                                    <th>Status</th>
                                     <th>Radius (m)</th>
                                     <th>Koordinat</th>
                                     <th>Tanggal Kejadian</th>
                                     <th>Warna</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -123,6 +125,7 @@ const ZonaBahayaListPage = () => {
                                     <tr key={z.id_zona}>
                                         <td>{z.nama_zona}</td>
                                         <td>{z.tingkat_risiko}</td>
+                                        <td>{z.status || "-"}</td>
                                         <td>{z.radius_meter}</td>
                                         <td>
                                             {Number(z.latitude).toFixed(5)},{" "}
@@ -144,6 +147,23 @@ const ZonaBahayaListPage = () => {
                                                     border: "1px solid #e5e7eb",
                                                 }}
                                             />
+                                        </td>
+                                        <td>
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(`/admin/zona-bahaya/semua/${z.id_zona}`)}
+                                                style={{
+                                                    border: "none",
+                                                    backgroundColor: "#2563eb",
+                                                    color: "white",
+                                                    padding: "8px 14px",
+                                                    borderRadius: "8px",
+                                                    cursor: "pointer",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Detail
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}

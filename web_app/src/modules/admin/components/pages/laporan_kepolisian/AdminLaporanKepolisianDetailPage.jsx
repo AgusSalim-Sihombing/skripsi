@@ -68,7 +68,7 @@ export default function AdminLaporanKepolisianDetailPage() {
         try {
             await patchAdminLaporanKepolisianStatus(id, { status });
             await fetchDetail();
-            alert("Status berhasil diupdate ✅");
+            alert("Status berhasil diupdate");
         } catch (e) {
             console.error(e);
             alert(e?.response?.data?.message || "Gagal update status");
@@ -110,7 +110,7 @@ export default function AdminLaporanKepolisianDetailPage() {
                 </div>
 
                 <div className="lk-card">
-                    <div className="lk-detailTop" style={{ color: "black" }}>
+                    <div className="lk-detailTop" style={{ color: "black"}}>
                         <div className="lk-detailTop__left" style={{ color: "black" }}>
                             <Field label="Status" value={row.status} />
                             <Field label="Created At" value={fmt(row.created_at)} />

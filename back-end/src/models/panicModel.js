@@ -164,8 +164,8 @@ const getActivePanicByCitizenId = async (citizenId) => {
 };
 
 const listHistoryForOfficer = async (officerId, limit = 100) => {
-  const [rows] = await db.execute(
-    `SELECT
+    const [rows] = await db.execute(
+        `SELECT
         pe.id AS panicId,
         pe.citizen_name_snap AS fromName,
         pe.citizen_lat AS lat,
@@ -182,15 +182,15 @@ const listHistoryForOfficer = async (officerId, limit = 100) => {
      WHERE pe.assigned_officer_id = ?
      ORDER BY pe.responded_at DESC, pe.created_at DESC
      LIMIT ?`,
-    [officerId, officerId, Number(limit)]
-  );
+        [officerId, officerId, Number(limit)]
+    );
 
-  return rows;
+    return rows;
 };
 
 const getHistoryDetailForOfficer = async (officerId, panicId) => {
-  const [rows] = await db.execute(
-    `SELECT
+    const [rows] = await db.execute(
+        `SELECT
         pe.id AS panicId,
         pe.citizen_id AS citizenId,
         pe.citizen_name_snap AS fromName,
@@ -209,10 +209,10 @@ const getHistoryDetailForOfficer = async (officerId, panicId) => {
        ON pdt.panic_id = pe.id AND pdt.officer_id = ?
      WHERE pe.id = ? AND pe.assigned_officer_id = ?
      LIMIT 1`,
-    [officerId, Number(panicId), officerId]
-  );
+        [officerId, Number(panicId), officerId]
+    );
 
-  return rows[0] || null;
+    return rows[0] || null;
 };
 
 

@@ -47,7 +47,7 @@ const loginAdmin = async (req, res) => {
                 username: admin.username,
             },
             JWT_SECRET,
-            { expiresIn: "8h" }
+            { expiresIn: "1d" }
         );
 
         return res.json({

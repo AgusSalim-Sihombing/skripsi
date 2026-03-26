@@ -3,30 +3,42 @@ const officerLiveModel = require("../../models/officerLiveModel");
 const panicModel = require("../../models/panicModel");
 
 // OFFICER: update lokasi + duty
+// OFFICER: update lokasi + duty
 const updateOfficerLocation = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const { lat, lng, isOnDuty } = req.body;
         const io = req.app.get("io");
-
-        // ambil data officer_live biar tau current_panic_id
-        const live = await officerLiveModel.getOfficerLiveByUserId(userId);
+        const userId = req.user.id;
+        const { lat, lng, isOnDuty, speed } = req.body;
 
         if (typeof lat !== "number" || typeof lng !== "number") {
             return res.status(400).json({ message: "lat/lng wajib number" });
         }
 
+        // ✅ update dulu
         await officerLiveModel.upsertOfficerLive(userId, !!isOnDuty, lat, lng);
+
+        // ✅ ambil live terbaru
+        const live = await officerLiveModel.getOfficerLiveByUserId(userId);
+
         if (live?.is_busy === 1 && live.current_panic_id) {
-            const panic = await panicModel.getPanicById(live.current_panic_id);
+            const panicId = live.current_panic_id;
+
+            const payload = {
+                panicId,
+                officerId: userId,
+                lat,
+                lng,
+                speed: typeof speed === "number" ? speed : null,
+                updatedAt: new Date().toISOString(),
+            };
+
+            // ✅ kirim ke panic room
+            io.to(`panic:${panicId}`).emit("officer:location", payload);
+
+            // ✅ kirim juga ke citizen room
+            const panic = await panicModel.getPanicById(panicId);
             if (panic?.citizen_id) {
-                io.to(`citizen:${panic.citizen_id}`).emit("officer:location", {
-                    panicId: live.current_panic_id,
-                    officerId: userId,
-                    lat,
-                    lng,
-                    updatedAt: new Date().toISOString(),
-                });
+                io.to(`citizen:${panic.citizen_id}`).emit("officer:location", payload);
             }
         }
 
@@ -36,6 +48,8 @@ const updateOfficerLocation = async (req, res) => {
         return res.status(500).json({ message: err.message });
     }
 };
+
+
 
 // MASYARAKAT: create panic + dispatch realtime ke officer
 // MASYARAKAT: create panic + dispatch realtime ke officer
@@ -53,15 +67,13 @@ const createPanic = async (req, res) => {
         if (!citizen) return res.status(404).json({ message: "User tidak ditemukan" });
 
         // ✅ (opsional tapi recommended) blok kalau masih ada panic aktif
-        if (panicModel.getActivePanicForCitizen) {
-            const active = await panicModel.getActivePanicForCitizen(citizenId);
-            if (active) {
-                return res.status(409).json({
-                    message: "Kamu masih punya panic aktif. Menunggu respon.",
-                    panicId: active.id,
-                    status: active.status,
-                });
-            }
+        const active = await panicModel.getActivePanicByCitizenId(citizenId);
+        if (active) {
+            return res.status(409).json({
+                message: "Kamu masih punya panic aktif. Menunggu respon.",
+                panicId: active.id,
+                status: active.status,
+            });
         }
 
         // ✅ PENTING: panicId didefinisikan di sini sebelum dipakai
@@ -136,6 +148,24 @@ const respondPanic = async (req, res) => {
 
         const panic = await panicModel.getPanicById(panicId);
         const officerLive = await officerLiveModel.getOfficerLiveByUserId(officerId);
+        // setelah const officerLive = await officerLiveModel.getOfficerLiveByUserId(officerId);
+
+        if (officerLive?.last_lat != null && officerLive?.last_lng != null) {
+            const locPayload = {
+                panicId,
+                officerId,
+                lat: officerLive.last_lat,
+                lng: officerLive.last_lng,
+                speed: null,
+                updatedAt: new Date().toISOString(),
+            };
+
+            // ✅ kirim ke citizen room (paling penting)
+            io.to(`citizen:${panic.citizen_id}`).emit("officer:location", locPayload);
+
+            // ✅ kirim juga ke panic room (optional tapi bagus)
+            io.to(`panic:${panicId}`).emit("officer:location", locPayload);
+        }
 
         io.in(`citizen:${panic.citizen_id}`).socketsJoin(`panic:${panicId}`);
         io.in(`officer:${officerId}`).socketsJoin(`panic:${panicId}`);
@@ -203,10 +233,15 @@ const resolvePanic = async (req, res) => {
 
         await officerLiveModel.setOfficerBusy(officerId, false, null);
 
-        // optional: notif citizen kalau mau
+        // notif citizen kalau
         const panic = await panicModel.getPanicById(panicId);
         if (panic?.citizen_id) {
             io.to(`citizen:${panic.citizen_id}`).emit("panic:resolved", {
+                panicId,
+                message: "Penanganan panic sudah diselesaikan.",
+            });
+
+            io.to(`panic:${panicId}`).emit("panic:resolved", {
                 panicId,
                 message: "Penanganan panic sudah diselesaikan.",
             });
@@ -227,16 +262,25 @@ const getPanicStatus = async (req, res) => {
         const panic = await panicModel.getPanicById(panicId);
         if (!panic) return res.status(404).json({ message: "Panic tidak ditemukan" });
 
-        // pastikan panic milik citizen ini
         if (panic.citizen_id !== citizenId) {
             return res.status(403).json({ message: "Tidak boleh akses panic ini" });
         }
 
+        let officerLive = null;
+        if (panic.status === "ASSIGNED" && panic.assigned_officer_id) {
+            officerLive = await officerLiveModel.getOfficerLiveByUserId(panic.assigned_officer_id);
+        }
+
         return res.json({
             panicId: panic.id,
-            status: panic.status, // OPEN / ASSIGNED / RESOLVED
+            status: panic.status,
             assignedOfficerId: panic.assigned_officer_id,
             assignedOfficerName: panic.assigned_officer_name_snap,
+
+            // ✅ tambahan penting
+            officerLastLat: officerLive?.last_lat ?? null,
+            officerLastLng: officerLive?.last_lng ?? null,
+            officerLocUpdatedAt: officerLive?.last_loc_updated_at ?? null,
         });
     } catch (err) {
         console.error("[getPanicStatus] error:", err);

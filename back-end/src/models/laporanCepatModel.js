@@ -108,10 +108,19 @@ const fotoLaporanAdmin = async (req, res) => {
     }
 };
 
+const deleteLaporanById = async (id_laporan) => {
+    const [result] = await db.execute(
+        `DELETE FROM laporan_cepat WHERE id_laporan = ?`,
+        [id_laporan]
+    );
+    return result.affectedRows;
+};
+
 module.exports = {
     getLaporanList,
     getLaporanById,
     getLaporanForZonaSelector,
     updateStatusLaporan,
     fotoLaporanAdmin,
+    deleteLaporanById,
 };

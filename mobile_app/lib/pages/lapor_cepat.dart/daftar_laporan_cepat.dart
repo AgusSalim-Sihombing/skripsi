@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobile_app/pages/lapor_cepat.dart/detail_laporan_cepat.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/config/api_config.dart';
 
 // SAMAKAN dengan baseUrl yang dipakai di LaporCepatPage
 // const String apiBaseUrl = 'http://10.121.204.17:3000/api';
-
 
 class DaftarLaporanPage extends StatefulWidget {
   const DaftarLaporanPage({Key? key}) : super(key: key);
@@ -138,7 +138,7 @@ class _DaftarLaporanPageState extends State<DaftarLaporanPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daftar Laporan Saya'),
-        backgroundColor: const Color(0xFF8B5A24),
+        // backgroundColor: const Color(0xFF8B5A24),
       ),
       body: RefreshIndicator(
         onRefresh: _fetchLaporan,
@@ -239,7 +239,14 @@ class _DaftarLaporanPageState extends State<DaftarLaporanPage> {
                         ],
                       ),
                       onTap: () {
-                        // nanti bisa diarahkan ke halaman detail laporan
+                        // Mengirim data 'item' (Map) ke halaman Detail
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DetailLaporanCepat(laporan: item),
+                          ),
+                        );
                       },
                     ),
                   );

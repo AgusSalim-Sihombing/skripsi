@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app/theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TentangAplikasiPage extends StatelessWidget {
@@ -18,7 +19,7 @@ class TentangAplikasiPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Tentang Aplikasi", style: TextStyle(fontSize: 16)),
-        backgroundColor: primary,
+        // backgroundColor: primary,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -29,7 +30,7 @@ class TentangAplikasiPage extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                // color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -69,7 +70,7 @@ class TentangAplikasiPage extends StatelessWidget {
                         SizedBox(height: 4),
                         Text(
                           "Sistem Informasi & Geofencing Alert Kejahatan Publik",
-                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                          style: TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
@@ -228,17 +229,17 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF8B5A24);
+    // const primary = Color(0xFF8B5A24);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            // color: Colors.black.withOpacity(0.05),
             blurRadius: 12,
             offset: const Offset(0, 8),
           ),
@@ -249,7 +250,7 @@ class _SectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: primary),
+              Icon(icon),
               const SizedBox(width: 8),
               Text(
                 title,

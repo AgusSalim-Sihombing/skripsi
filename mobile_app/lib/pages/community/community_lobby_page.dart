@@ -119,17 +119,155 @@ class _CommunityLobbyPageState extends State<CommunityLobbyPage> {
     }
   }
 
+  // Future<void> _handleTap(dynamic item) async {
+  //   final int id = item['id'] as int;
+  //   final String name = (item['name'] ?? '').toString();
+  //   final String myStatus = (item['my_status'] ?? 'none').toString();
+
+  //   if (myStatus == 'approved') {
+  //     Navigator.push(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (_) =>
+  //             CommunityChatPage(communityId: id, communityName: name),
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   if (myStatus == 'pending_join') {
+  //     _snack('Masih nunggu persetujuan owner yaa ✋');
+  //     return;
+  //   }
+
+  //   if (myStatus == 'banned') {
+  //     _snack('Kamu dibanned dari komunitas ini.');
+  //     return;
+  //   }
+
+  //   if (myStatus == 'invited') {
+  //     final ok = await showDialog<bool>(
+  //       context: context,
+  //       builder: (_) => AlertDialog(
+  //         title: Text('Undangan ke "$name"'),
+  //         content: const Text('Mau terima undangannya?'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.pop(context, false),
+  //             child: const Text('Tolak'),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () => Navigator.pop(context, true),
+  //             child: const Text('Terima'),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+
+  //     if (ok == true) {
+  //       try {
+  //         await CommunityService.acceptInvite(id);
+  //         _snack('Invite diterima ✅');
+  //         await _refresh();
+  //       } catch (e) {
+  //         _snack('Error: $e');
+  //       }
+  //     } else if (ok == false) {
+  //       try {
+  //         await CommunityService.declineInvite(id);
+  //         _snack('Invite ditolak ❌');
+  //         await _refresh();
+  //       } catch (e) {
+  //         _snack('Error: $e');
+  //       }
+  //     }
+  //     return;
+  //   }
+
+  //   // default: none / rejected -> join request
+  //   final join = await showDialog<bool>(
+  //     context: context,
+  //     builder: (_) => AlertDialog(
+  //       title: Text('Join "$name"?'),
+  //       content: const Text('Kamu bakal kirim request ke owner buat join.'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context, false),
+  //           child: const Text('Cancel'),
+  //         ),
+  //         ElevatedButton(
+  //           onPressed: () => Navigator.pop(context, true),
+  //           child: const Text('Join'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+
+  //   if (join == true) {
+  //     try {
+  //       await CommunityService.requestJoin(id);
+  //       _snack('Request join terkirim ✅');
+  //       await _refresh();
+  //     } catch (e) {
+  //       _snack('Error: $e');
+  //     }
+  //   }
+  // }
+
   Future<void> _handleTap(dynamic item) async {
     final int id = item['id'] as int;
     final String name = (item['name'] ?? '').toString();
     final String myStatus = (item['my_status'] ?? 'none').toString();
+    final String communityStatus = (item['status'] ?? 'active').toString();
+    final String takedownReason = (item['takedown_reason'] ?? '').toString();
+
+    // kalau komunitas sedang takedown
+    if (communityStatus == 'takedown') {
+      if (myStatus == 'approved') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CommunityChatPage(
+              communityId: id,
+              communityName: name,
+              communityStatus: communityStatus,
+              takedownReason: takedownReason,
+            ),
+          ),
+        );
+        return;
+      }
+
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Komunitas Dinonaktifkan'),
+          content: Text(
+            takedownReason.isNotEmpty
+                ? 'Komunitas ini sedang ditakedown admin.\n\nAlasan:\n$takedownReason'
+                : 'Komunitas ini sedang ditakedown admin.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     if (myStatus == 'approved') {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              CommunityChatPage(communityId: id, communityName: name),
+          builder: (_) => CommunityChatPage(
+            communityId: id,
+            communityName: name,
+            communityStatus: communityStatus,
+            takedownReason: takedownReason,
+          ),
         ),
       );
       return;
@@ -184,7 +322,6 @@ class _CommunityLobbyPageState extends State<CommunityLobbyPage> {
       return;
     }
 
-    // default: none / rejected -> join request
     final join = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -323,6 +460,11 @@ class _CommunityLobbyPageState extends State<CommunityLobbyPage> {
 
                               final iconUrl = '${it['icon_url'] ?? ''}';
 
+                              final communityStatus = (it['status'] ?? 'active')
+                                  .toString();
+                              final takedownReason =
+                                  (it['takedown_reason'] ?? '').toString();
+
                               return InkWell(
                                 borderRadius: BorderRadius.circular(18),
                                 onTap: () => _handleTap(it),
@@ -371,6 +513,39 @@ class _CommunityLobbyPageState extends State<CommunityLobbyPage> {
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
                                                   color: Colors.grey[800],
+                                                ),
+                                              ),
+                                            ],
+                                            if (communityStatus ==
+                                                'takedown') ...[
+                                              const SizedBox(height: 6),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red.withOpacity(
+                                                    0.10,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        999,
+                                                      ),
+                                                ),
+                                                child: Text(
+                                                  takedownReason.isNotEmpty
+                                                      ? 'Dinonaktifkan admin: $takedownReason'
+                                                      : 'Dinonaktifkan admin',
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 11,
+                                                  ),
                                                 ),
                                               ),
                                             ],
