@@ -9,7 +9,9 @@ const port = process.env.PORT || 3001;
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const adminUserRoute = require("./src/routes/adminUserRoute");
-
+// const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./src/docs/swagger");
 const USER_JWT_SECRET = process.env.USER_JWT_SECRET || "user-secret-dev";
 
 const mobilePanicRoute = require("./src/routes/mobilePanicRoute");
@@ -78,10 +80,8 @@ app.use("/api/mobile/officer", mobileOfficerFieldReportRoute);
 app.use("/api/public", communityPublicRoutes);
 app.use("/api/admin", communityAdminRoutes);
 
-// Root test endpoint 
-app.get("/", (req, res) => {
-  res.send("API running successfully");
-});
+// Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 

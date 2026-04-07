@@ -337,7 +337,7 @@ class _StepRow extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 13, height: 1.35),
+              style: const TextStyle(fontSize: 13, height: 1.35 , color: Colors.white),
             ),
           ),
         ],
@@ -372,7 +372,7 @@ class _ActionChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: Colors.black87),
+            Icon(icon, size: 18, color: Colors.white),
             const SizedBox(width: 8),
             Text(
               label,

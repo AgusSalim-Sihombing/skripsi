@@ -19,6 +19,7 @@
     .public-navbar__nav {
         flex-wrap: wrap;
         justify-content: center;
+        /* background-color: red; */
     }
 
     .section {

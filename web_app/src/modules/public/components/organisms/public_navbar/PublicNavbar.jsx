@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "../../pages/HomePublicPage.css";
-
+import "../../pages/HomePublicPage.css"
 const PublicNavbar = () => {
     const scrollToSection = (id) => {
         const el = document.getElementById(id);
@@ -21,7 +21,9 @@ const PublicNavbar = () => {
                     </a>
                 </div>
 
-                <nav className="public-navbar__nav">
+                <nav className="public-navbar__nav" style={{
+                    backgroundColor: " rgba(80, 80, 80, 0.08)"
+                }}>
                     <button onClick={() => scrollToSection("aplikasi-sigap")} className="nav-link">
                         Aplikasi SIGAP
                     </button>

@@ -18,18 +18,29 @@
 
 /* ====== SIDEBAR ====== */
 
-.admin-sidebar {
+/* .admin-sidebar {
     width: 230px;
     background: #ffffff;
-    /* PUTIH */
     padding: 1.2rem 0.9rem;
     display: flex;
     flex-direction: column;
-    /* gap: 1rem; */
     border-right: 1px solid #e5e7eb;
     position: fixed;
     height: 100vh;
-}
+} */
+.admin-sidebar {
+    width: 230px;
+    background: #ffffff;
+    padding: 1.2rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e5e7eb;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    overflow-y: auto;
+}   
 
 /* logo bagian atas */
 .admin-sidebar__logo {
@@ -416,11 +427,11 @@
     padding: 20px;
 }
 
-.user-page{
+.user-page {
     padding: 20px;
 }
 
-.beranda{
+.beranda {
     padding: 20px;
 }
 
@@ -1310,6 +1321,6 @@ form.control.costum-input:focus {
     font-family: 'Inter', sans-serif;
 }
 
-.komunitas-page{
+.komunitas-page {
     padding: 20px;
 }

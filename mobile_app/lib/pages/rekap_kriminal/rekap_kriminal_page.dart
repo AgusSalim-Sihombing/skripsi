@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart' as lat_lng;
+import 'package:mobile_app/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mobile_app/config/api_config.dart';
@@ -151,11 +152,12 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
   @override
   Widget build(BuildContext context) {
     final list = _filteredItems;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Rekap Kriminal", style: TextStyle(fontSize: 16)),
-        backgroundColor: const Color(0xFF8B5A24),
+        backgroundColor: isDark ? AppColors.bgPrimary : const Color(0xFFF4F4F4),
       ),
       body: Column(
         children: [
