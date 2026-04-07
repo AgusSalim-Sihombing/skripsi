@@ -549,7 +549,7 @@ const mockZones = [
         title: "Zona Rawan Malam Hari",
         risk: "Risiko Tinggi",
         radius: "600 m",
-        location: "Jl. SM Raja, Medan",
+        location: "Jl. SM Raja, Medan jaya",
         status: "Aktif",
         date: "07 Januari 2026 • 22:15",
         top: "74%",
