@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobile_app/theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PanicHistoryDetailPage extends StatefulWidget {
@@ -101,12 +102,13 @@ class _PanicHistoryDetailPageState extends State<PanicHistoryDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF8B5A24);
+    // const primary = Color(0xFF8B5A24);
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text("Detail Riwayat Panic"),
-        backgroundColor: primary,
+        // backgroundColor: primary,
         actions: [
           IconButton(onPressed: _fetchDetail, icon: const Icon(Icons.refresh)),
         ],
@@ -142,7 +144,7 @@ class _PanicHistoryDetailPageState extends State<PanicHistoryDetailPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.textMuted4,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -205,7 +207,7 @@ class _PanicHistoryDetailPageState extends State<PanicHistoryDetailPage> {
                   ? () => _openMaps(lat, lng)
                   : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8B5A24),
+                backgroundColor: AppColors.success,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),

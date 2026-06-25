@@ -16,7 +16,7 @@ const menuItems = [
     { label: "Beranda", path: "/admin/dashboard", icon: FiHome },
     { label: "Data Pengguna", path: "/admin/users", icon: FiUsers },
     { label: "Data Officer", path: "/admin/officers", icon: FiUserCheck },
-    { label: "Laporan Cepat", path: "/admin/laporan-cepat", icon: FiFileText },
+    { label: "Laporan Kejahatan Cepat", path: "/admin/laporan-cepat", icon: FiFileText },
     { label: "Laporan Kepolisian", path: "/admin/laporan-kepolisian", icon: FiFileText },
     { label: "Zona Bahaya", path: "/admin/zona-bahaya", icon: FiAlertTriangle },
     { label: "Panic Alert", path: "/admin/panic-alert", icon: FiShield },

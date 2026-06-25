@@ -215,6 +215,17 @@ const getHistoryDetailForOfficer = async (officerId, panicId) => {
     return rows[0] || null;
 };
 
+const setOfficerLocationSnap = async ({ panicId, lat, lng, updatedAt }) => {
+    await db.execute(
+        `UPDATE panic_events    
+     SET officer_lat_snap = ?,
+         officer_lng_snap = ?,
+         officer_loc_updated_at_snap = ?
+     WHERE id = ?`,
+        [lat, lng, updatedAt || null, panicId]
+    );
+};
+
 
 module.exports = {
     createPanicEvent,
@@ -228,4 +239,5 @@ module.exports = {
     getActivePanicByCitizenId,
     listHistoryForOfficer,
     getHistoryDetailForOfficer,
+    setOfficerLocationSnap
 };

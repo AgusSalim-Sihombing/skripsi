@@ -185,7 +185,7 @@ const AdminKomunitasListPage = () => {
                         >
                           Monitor
                         </button>
-                        {c.status === "active" ? (
+                        {/* {c.status === "active" ? (
                           <button
                             onClick={() => onTakedown(c.id)}
                             style={{ ...styles.btnMonitor, background: "#ef4444", color: "#fff", borderColor: "#ef4444" }}
@@ -199,7 +199,7 @@ const AdminKomunitasListPage = () => {
                           >
                             Restore
                           </button>
-                        )}
+                        )} */}
                       </td>
                     </tr>
                   ))}

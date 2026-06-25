@@ -3,7 +3,8 @@ import 'package:mobile_app/services/police_report_service.dart';
 
 class DetailLaporanKepolisianPage extends StatefulWidget {
   final int reportId;
-  const DetailLaporanKepolisianPage({super.key, required this.reportId});
+  final String? reportTitle;
+  const DetailLaporanKepolisianPage({super.key, required this.reportId, this.reportTitle});
 
   @override
   State<DetailLaporanKepolisianPage> createState() =>
@@ -74,6 +75,8 @@ class _DetailLaporanKepolisianPageState
     }
   }
 
+ 
+
   Future<void> _cancel() async {
     final d = _data;
     final status = (d?['status'] ?? 'pending').toString();
@@ -138,10 +141,11 @@ class _DetailLaporanKepolisianPageState
     final canCancel = statusRaw == 'pending' && assignedOfficer == null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
-        title: Text("Detail Laporan #${widget.reportId}"),
-        backgroundColor: const Color(0xFF8B5A24),
+        title: Text("Detail Laporan ${d?['tindak_pidana'] ?? widget.reportTitle ?? ''}"),
+        // backgroundColor: const Color(0xFF8B5A24),
+        centerTitle: true,
         actions: [
           IconButton(
             onPressed: _loading ? null : _load,

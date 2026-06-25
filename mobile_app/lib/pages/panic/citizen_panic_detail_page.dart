@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as lat_lng;
 import 'package:mobile_app/pages/landing_page.dart';
 import 'package:mobile_app/services/socket_service.dart';
+import 'package:mobile_app/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
@@ -369,7 +370,8 @@ class _CitizenPanicDetailPageState extends State<CitizenPanicDetailPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Detail Respon Officer"),
-          backgroundColor: primary,
+          // backgroundColor: primary,
+          centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _exitToHome,
@@ -501,7 +503,12 @@ class _CitizenPanicDetailPageState extends State<CitizenPanicDetailPage> {
                             Polyline(
                               points: hasRoute ? _routePoints : [o, c],
                               strokeWidth: 4,
-                              color: const Color.fromARGB(255, 0, 94, 255).withOpacity(0.85),
+                              color: const Color.fromARGB(
+                                255,
+                                0,
+                                94,
+                                255,
+                              ).withOpacity(0.85),
                             ),
                           ],
                         ),
@@ -544,7 +551,7 @@ class _CitizenPanicDetailPageState extends State<CitizenPanicDetailPage> {
                         FloatingActionButton(
                           heroTag: "follow_officer",
                           backgroundColor: _followOfficer
-                              ? primary
+                              ? AppColors.primaryBlue
                               : Colors.white,
                           onPressed: () {
                             setState(() => _followOfficer = !_followOfficer);
@@ -553,14 +560,14 @@ class _CitizenPanicDetailPageState extends State<CitizenPanicDetailPage> {
                               _followToOfficer();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text("✅ Follow Officer ON"),
+                                  content: Text("Follow Officer ON"),
                                   duration: Duration(milliseconds: 900),
                                 ),
                               );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text("🧭 Follow Officer OFF"),
+                                  content: Text("Follow Officer OFF"),
                                   duration: Duration(milliseconds: 900),
                                 ),
                               );
@@ -570,13 +577,15 @@ class _CitizenPanicDetailPageState extends State<CitizenPanicDetailPage> {
                             _followOfficer
                                 ? Icons.navigation_rounded
                                 : Icons.navigation_outlined,
-                            color: _followOfficer ? Colors.white : primary,
+                            color: _followOfficer
+                                ? Colors.white
+                                : AppColors.primaryBlue,
                           ),
                         ),
                         const SizedBox(height: 10),
                         FloatingActionButton(
                           heroTag: "fit_bounds",
-                          backgroundColor: primary,
+                          backgroundColor: AppColors.primaryBlue2,
                           onPressed: _fitBoundsIfPossible,
                           child: const Icon(Icons.fit_screen_rounded),
                         ),
@@ -590,7 +599,7 @@ class _CitizenPanicDetailPageState extends State<CitizenPanicDetailPage> {
                           },
                           child: const Icon(
                             Icons.my_location_rounded,
-                            color: primary,
+                            color: AppColors.primaryBlue2,
                           ),
                         ),
                       ],

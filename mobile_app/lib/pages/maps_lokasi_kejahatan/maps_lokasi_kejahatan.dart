@@ -1930,15 +1930,22 @@ class _IncidentDetailCard extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ZonaBahayaDetailPage(incident: incident),
+                      builder: (_) => ZonaBahayaDetailPage(
+                        incident: incident,
+                        address: address,
+                      ),
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isDark
                       ? AppColors.primaryPurple2
-                      : AppColors
-                            .surfaceCard, // Sesuaikan dengan warna aplikasimu
+                      : const Color.fromARGB(
+                          255,
+                          20,
+                          66,
+                          202,
+                        ), // Sesuaikan dengan warna aplikasimu
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),

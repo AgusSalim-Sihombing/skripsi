@@ -26,8 +26,7 @@ import AdminPanicAlertDetailPage from "./modules/admin/components/pages/panic_al
 import AdminKomunitasListPage from "./modules/admin/components/pages/admin_komunitas/admin_komunitas_list_page";
 import AdminKomunitasDetailPage from "./modules/admin/components/pages/admin_komunitas/admin_komunitas_detail_page";
 import ZonaBahayaDetailPage from "./modules/admin/components/pages/ZonaBahayaDetailPage";
-
-
+// import 'bootstrap/dist/css/bootstrap.min.css';
 
 
 

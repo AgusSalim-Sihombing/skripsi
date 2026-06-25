@@ -120,40 +120,40 @@ const updateUserAdmin = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const {
-      nik,
-      nama,
-      alamat,
-      username,
-      phone,
-      tempat_lahir,
-      tanggal_lahir,
-      email,
-      role,
-      status_verifikasi,
-      catatan_verifikasi,
-      newPassword, // optional: kalau diisi → ganti password
-    } = req.body;
+    const payload = {};
 
-    const updateData = {
-      nik,
-      nama,
-      alamat,
-      username,
-      phone,
-      tempat_lahir,
-      tanggal_lahir,
-      email,
-      role,
-      status_verifikasi,
-      catatan_verifikasi,
-    };
+    const allowedFields = [
+      "nik",
+      "nama",
+      "alamat",
+      "username",
+      "phone",
+      "tempat_lahir",
+      "tanggal_lahir",
+      "email",
+      "role",
+      "status_verifikasi",
+      "catatan_verifikasi",
+      "nrp",
+      "pangkat",
+      "satuan",
+    ];
 
-    if (newPassword && newPassword.trim() !== "") {
-      updateData.password = await bcrypt.hash(newPassword, 10);
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        payload[key] = req.body[key];
+      }
     }
 
-    await userModel.updateUserAdmin(id, updateData);
+    if (
+      Object.prototype.hasOwnProperty.call(req.body, "newPassword") &&
+      req.body.newPassword &&
+      req.body.newPassword.trim() !== ""
+    ) {
+      payload.password = await bcrypt.hash(req.body.newPassword, 10);
+    }
+
+    await userModel.updateUserAdmin(id, payload);
 
     return res.json({
       success: true,
@@ -208,6 +208,56 @@ const fotoKtpUserAdmin = async (req, res) => {
   }
 };
 
+
+const takedownUserAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Alasan takedown wajib diisi",
+      });
+    }
+
+    await userModel.setUserTakedown(id, reason.trim());
+
+    return res.json({
+      success: true,
+      message: "Akun user berhasil dinonaktifkan sementara",
+    });
+  } catch (err) {
+    console.error("takedownUserAdmin error:", err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || "Terjadi kesalahan saat menonaktifkan akun user",
+    });
+  }
+};
+
+const restoreUserAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const restoredStatus = await userModel.restoreUserTakedown(id);
+
+    return res.json({
+      success: true,
+      message: "Akun user berhasil diaktifkan kembali",
+      data: {
+        restored_status: restoredStatus,
+      },
+    });
+  } catch (err) {
+    console.error("restoreUserAdmin error:", err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || "Terjadi kesalahan saat mengaktifkan kembali akun user",
+    });
+  }
+};
+
 module.exports = {
   listUsersAdmin,
   detailUserAdmin,
@@ -215,4 +265,6 @@ module.exports = {
   updateUserAdmin,
   deleteUserAdmin,
   fotoKtpUserAdmin,
+  takedownUserAdmin,
+  restoreUserAdmin
 };

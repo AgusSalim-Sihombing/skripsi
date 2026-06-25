@@ -57,9 +57,9 @@ const AdminPanicAlertDetailPage = () => {
                             Status: {panic?.status || "-"}
                         </span>
                     </div>
-                    <button  onClick={() => navigate("/admin/panic-alert")}>
+                    {/* <button  onClick={() => navigate("/admin/panic-alert")}>
                         ← Kembali ke Daftar
-                    </button>
+                    </button> */}
                 </div>
 
                 {loading ? (
@@ -100,7 +100,7 @@ const AdminPanicAlertDetailPage = () => {
                                             <tr><td><strong>Nama</strong></td><td>:</td><td>{panic.assigned_officer_name_snap || panic.officerNama || "Belum ada petugas"}</td></tr>
                                             <tr><td><strong>Username</strong></td><td>:</td><td>@{panic.officerUsername || "-"}</td></tr>
                                             <tr><td><strong>Terakhir Update</strong></td><td>:</td><td>{fmt(panic.officerLastUpdatedAt)}</td></tr>
-                                             <tr><td><strong>Alamat Rumah</strong></td><td>:</td><td>{panic.officerAlamat || "Lokasi GPS Terlampir"}</td></tr>
+                                            <tr><td><strong>Alamat Rumah</strong></td><td>:</td><td>{panic.officerAlamat || "Lokasi GPS Terlampir"}</td></tr>
                                             <tr><td><strong>No. Tlp</strong></td><td>:</td><td>{panic.officerPhone || ""}</td></tr>
                                         </tbody>
                                     </table>

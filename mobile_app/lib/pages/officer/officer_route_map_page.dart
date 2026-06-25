@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart' as lat_lng;
+import 'package:mobile_app/theme/app_theme.dart';
 
 class OfficerRouteMapPage extends StatefulWidget {
   final int panicId;
@@ -28,6 +29,8 @@ class OfficerRouteMapPage extends StatefulWidget {
 
 class _OfficerRouteMapPageState extends State<OfficerRouteMapPage> {
   final MapController _map = MapController();
+  String? _resolvedAddress;
+  bool _loadingAddress = false;
 
   lat_lng.LatLng? _officerPos;
   late final lat_lng.LatLng _citizenPos = lat_lng.LatLng(
@@ -54,13 +57,96 @@ class _OfficerRouteMapPageState extends State<OfficerRouteMapPage> {
     return "${h}j ${m}m";
   }
 
+  bool _isUsefulAddress(String? value) {
+    if (value == null) return false;
+
+    final v = value.trim().toLowerCase();
+
+    return v.isNotEmpty &&
+        v != "-" &&
+        v != "null" &&
+        v != "alamat target tidak tersedia" &&
+        v != "tidak tersedia";
+  }
+
   @override
   void initState() {
     super.initState();
     _startOfficerStream();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    // langsung pakai alamat kiriman kalau memang valid
+    _resolvedAddress = _isUsefulAddress(widget.address)
+        ? widget.address.trim()
+        : null;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _map.move(_citizenPos, 16);
+
+      // tetap fetch ulang dari koordinat biar sama seperti laporan cepat
+      await _fetchTargetAddress();
     });
+  }
+
+  Future<void> _fetchTargetAddress() async {
+    if (_loadingAddress) return;
+
+    setState(() => _loadingAddress = true);
+
+    try {
+      final lat = widget.citizenLat;
+      final lng = widget.citizenLng;
+
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse'
+        '?format=json'
+        '&lat=$lat'
+        '&lon=$lng'
+        '&zoom=18'
+        '&addressdetails=1',
+      );
+
+      final res = await http.get(
+        url,
+        headers: {
+          // buat lebih jelas identitas app
+          'User-Agent': 'SIGAP Mobile/1.0 (contact: your@email.com)',
+          'Accept-Language': 'id',
+        },
+      );
+
+      debugPrint("reverse geocode status: ${res.statusCode}");
+      debugPrint("reverse geocode body: ${res.body}");
+
+      if (!mounted) return;
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final displayName = data['display_name']?.toString();
+
+        setState(() {
+          _resolvedAddress =
+              (displayName != null && displayName.trim().isNotEmpty)
+              ? displayName
+              : null;
+        });
+      } else {
+        // jangan paksa "tidak tersedia", biar fallback ke koordinat
+        setState(() {
+          _resolvedAddress = null;
+        });
+      }
+    } catch (e) {
+      debugPrint("reverse geocode error: $e");
+
+      if (!mounted) return;
+      setState(() {
+        _resolvedAddress = null;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _loadingAddress = false);
+      }
+    }
   }
 
   Future<void> _startOfficerStream() async {
@@ -163,8 +249,12 @@ class _OfficerRouteMapPageState extends State<OfficerRouteMapPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Rute ke Lokasi"),
-        backgroundColor: const Color(0xFF8B5A24),
+        centerTitle: true,
+        title: const Text(
+          "Rute ke Lokasi",
+          style: TextStyle(color: AppColors.textWhite),
+        ),
+        backgroundColor: AppColors.primaryBlue2,
       ),
       body: Stack(
         children: [
@@ -184,7 +274,7 @@ class _OfficerRouteMapPageState extends State<OfficerRouteMapPage> {
                     Polyline(
                       points: hasRoute ? _routePoints : [o, _citizenPos],
                       strokeWidth: 4,
-                      color: Colors.blueAccent.withOpacity(0.85),
+                      color: AppColors.success,
                     ),
                   ],
                 ),
@@ -233,19 +323,143 @@ class _OfficerRouteMapPageState extends State<OfficerRouteMapPage> {
                   ),
                 ],
               ),
+              // child: Column(
+              //   crossAxisAlignment: CrossAxisAlignment.start,
+              //   children: [
+              //     Text(
+              //       "Tujuan: ${widget.citizenName}",
+              //       style: const TextStyle(fontWeight: FontWeight.w800),
+              //     ),
+              //     const SizedBox(height: 6),
+              //     Text(
+              //       widget.address,
+              //       style: const TextStyle(color: Colors.black54),
+              //     ),
+              //     const SizedBox(height: 10),
+              //     Row(
+              //       children: [
+              //         Expanded(
+              //           child: Text(
+              //             "Jarak: ${_routeDistanceM == null ? "-" : _formatDistance(_routeDistanceM!)}",
+              //           ),
+              //         ),
+              //         Expanded(
+              //           child: Text(
+              //             "Estimasi: ${_routeDurationS == null ? "-" : _formatEta(_routeDurationS!)}",
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //     const SizedBox(height: 10),
+              //     Row(
+              //       children: [
+              //         Expanded(
+              //           child: ElevatedButton.icon(
+              //             onPressed: _fitBounds,
+              //             icon: const Icon(Icons.fit_screen),
+              //             label: const Text("Fit"),
+              //             style: ElevatedButton.styleFrom(
+              //               backgroundColor: const Color(0xFF8B5A24),
+              //             ),
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //   ],
+              // ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     "Tujuan: ${widget.citizenName}",
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.address,
-                    style: const TextStyle(color: Colors.black54),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
                   ),
                   const SizedBox(height: 10),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(
+                        width: 85,
+                        child: Text(
+                          "Latitude",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const Text(": "),
+                      Expanded(
+                        child: Text(
+                          widget.citizenLat.toStringAsFixed(6),
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(
+                        width: 85,
+                        child: Text(
+                          "Longitude",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const Text(": "),
+                      Expanded(
+                        child: Text(
+                          widget.citizenLng.toStringAsFixed(6),
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(
+                        width: 85,
+                        child: Text(
+                          "Lokasi",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const Text(": "),
+                      Expanded(
+                        child: Text(
+                          _loadingAddress
+                              ? "Mengambil nama lokasi target..."
+                              : (_resolvedAddress ??
+                                    (_isUsefulAddress(widget.address)
+                                        ? widget.address
+                                        : "${widget.citizenLat.toStringAsFixed(6)}, ${widget.citizenLng.toStringAsFixed(6)}")),
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
                   Row(
                     children: [
                       Expanded(
@@ -260,7 +474,9 @@ class _OfficerRouteMapPageState extends State<OfficerRouteMapPage> {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 10),
+
                   Row(
                     children: [
                       Expanded(

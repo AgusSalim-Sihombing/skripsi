@@ -91,7 +91,7 @@ exports.mineDetail = async (req, res) => {
 
         const row = await M.getMineDetail(userId, id);
         if (!row) return res.status(404).json({ message: "Laporan tidak ditemukan" });
-
+        // println("mineDetail", { userId, id, row });
         return res.json({ data: row });
     } catch (e) {
         return res.status(500).json({ message: "Gagal ambil detail", error: e.message });

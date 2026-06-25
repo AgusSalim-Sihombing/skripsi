@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_app/pages/officer/panic_detail_page.dart';
 import 'package:mobile_app/services/socket_service.dart';
+import 'package:mobile_app/theme/app_theme.dart';
 
 class PanicDispatchPage extends StatefulWidget {
   final String token;
@@ -176,12 +177,12 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF8B5A24);
+    // const primary = Color(0xFF8B5A24);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Panic Dispatch"),
-        backgroundColor: primary,
+        // backgroundColor: primary,
         actions: [
           IconButton(
             onPressed: _fetchOfferedPanics,
@@ -189,6 +190,7 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
             tooltip: "Refresh",
           ),
         ],
+        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -273,7 +275,7 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
                           child: Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.textSoft2,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
@@ -285,7 +287,7 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
                               border: Border.all(
                                 color: status == "ASSIGNED"
                                     ? Colors.green.withOpacity(0.35)
-                                    : Colors.red.withOpacity(0.25),
+                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.25),
                               ),
                             ),
                             child: Column(
@@ -298,24 +300,24 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
                                         horizontal: 10,
                                         vertical: 6,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFC62828),
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
-                                      ),
+                                      // decoration: BoxDecoration(
+                                      //   color: const Color(0xFFC62828),
+                                      //   borderRadius: BorderRadius.circular(
+                                      //     999,
+                                      //   ),
+                                      // ),
                                       child: const Row(
                                         children: [
                                           Icon(
                                             Icons.warning_amber_rounded,
-                                            color: Colors.white,
+                                            color: Colors.red,
                                             size: 16,
                                           ),
                                           SizedBox(width: 6),
                                           Text(
                                             "PANIC",
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: Colors.red,
                                               fontWeight: FontWeight.w800,
                                             ),
                                           ),
@@ -370,7 +372,7 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
                                   child: ElevatedButton.icon(
                                     onPressed: () => _openDetail(x),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: primary,
+                                      backgroundColor: AppColors.bgDeep,
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 12,
                                       ),

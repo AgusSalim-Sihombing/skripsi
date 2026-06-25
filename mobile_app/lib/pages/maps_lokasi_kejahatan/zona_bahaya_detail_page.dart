@@ -16,8 +16,9 @@ import 'package:intl/date_symbol_data_local.dart';
 
 class ZonaBahayaDetailPage extends StatefulWidget {
   final CrimeIncident incident;
+  final String? address;
 
-  const ZonaBahayaDetailPage({super.key, required this.incident});
+  const ZonaBahayaDetailPage({super.key, required this.incident, this.address});
 
   @override
   State<ZonaBahayaDetailPage> createState() => _ZonaBahayaDetailPageState();
@@ -36,12 +37,71 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
   Uint8List? _fotoBytes;
   bool _loadingFoto = false;
   String? _fotoError;
+  String? _address;
+  bool _loadingAddress = false;
 
   @override
   void initState() {
     super.initState();
     _loadVoteSummary();
     _loadZonaFoto();
+    _address = widget.address;
+
+    if ((_address ?? "").trim().isEmpty) {
+      _loadAddress();
+    }
+  }
+
+  Future<void> _loadAddress() async {
+    setState(() => _loadingAddress = true);
+
+    try {
+      final lat = widget.incident.position.latitude;
+      final lng = widget.incident.position.longitude;
+
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse'
+        '?format=json'
+        '&lat=$lat'
+        '&lon=$lng'
+        '&zoom=18'
+        '&addressdetails=1',
+      );
+
+      final res = await http.get(
+        url,
+        headers: {'User-Agent': 'sigap-mobile-app/1.0 (yourapp@example.com)'},
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final displayName = data['display_name']?.toString();
+
+        if (mounted) {
+          setState(() {
+            _address = (displayName != null && displayName.isNotEmpty)
+                ? displayName
+                : "Tidak tersedia";
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _address = "Tidak tersedia";
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _address = "Tidak tersedia";
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loadingAddress = false);
+      }
+    }
   }
 
   void _showSnack(String msg) {
@@ -377,6 +437,7 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
     final isPending = incident.status.toLowerCase().contains('pending');
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final String? address;
     // final f = DateFormat('yMd');
     // Fungsi pembuat baris tabel (Label : Value)
     TableRow _buildTableRow(String label, String value) {
@@ -386,21 +447,28 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               label,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color.fromARGB(255, 0, 0, 0),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 4),
             child: Text(
               ":",
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12,
+                color: Color.fromARGB(255, 0, 0, 0),
+              ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               value,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color.fromARGB(255, 81, 81, 81)),
             ),
           ),
         ],
@@ -447,6 +515,7 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
           children: [
             // ==== INFO ZONA / KEJADIAN ====
             Card(
+              color: AppColors.borderSoft,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -512,6 +581,14 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
                           "${incident.position.latitude.toStringAsFixed(5)}, ${incident.position.longitude.toStringAsFixed(5)}",
                         ),
                         _buildTableRow(
+                          "Alamat",
+                          _loadingAddress
+                              ? "Mengambil alamat..."
+                              : ((_address ?? "").trim().isNotEmpty
+                                    ? _address!
+                                    : "Tidak tersedia"),
+                        ),
+                        _buildTableRow(
                           "Radius",
                           "${incident.radiusMeter.toStringAsFixed(0)} meter",
                         ),
@@ -524,7 +601,7 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
                           _buildTableRow(
                             "Sumber Laporan",
                             incident.namaPelapor!,
-                             // <=== Menampilkan nama asli
+                            // <=== Menampilkan nama asli
                           )
                         else if (incident.reportSourceId != null)
                           _buildTableRow(
@@ -570,6 +647,7 @@ class _ZonaBahayaDetailPageState extends State<ZonaBahayaDetailPage> {
 
             // ==== FOTO KEJADIAN ====
             Card(
+              color: AppColors.borderSoft,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

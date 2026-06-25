@@ -186,7 +186,7 @@ const ZonaBahayaDetailPage = () => {
                 </button>
 
                 <div style={{ marginBottom: "20px" }}>
-                    <h2 style={{ marginBottom: "6px",color:"black" }}>Detail Zona Bahaya</h2>
+                    <h2 style={{ marginBottom: "6px", color: "black" }}>Detail Zona Bahaya</h2>
                     <p style={{ color: "#6b7280", margin: 0 }}>
                         Admin dapat melihat hasil voting zona dan menentukan keputusan akhir.
                     </p>
@@ -231,12 +231,17 @@ const ZonaBahayaDetailPage = () => {
                                     boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
                                 }}
                             >
-                                <h3 style={{ marginTop: 0, marginBottom: "16px", color:"black" }}>
+                                <h3 style={{ marginTop: 0, marginBottom: "16px", color: "black" }}>
                                     Informasi Zona
                                 </h3>
 
-                                <table style={{ width: "100%", borderCollapse: "collapse", border:"hide"}}>
+                                <table style={{ width: "100%", borderCollapse: "collapse", border: "hide" }}>
                                     <tbody>
+                                        <tr>
+                                            <th style={thStyle}>Sumber Id Laporan</th>
+                                            <td style={colonStyle}>:</td>
+                                            <td style={tdStyle}>{zone.id_laporan_sumber || "-"}</td>
+                                        </tr>
                                         <tr>
                                             <th style={thStyle}>Nama Zona</th>
                                             <td style={colonStyle}>:</td>
@@ -247,11 +252,11 @@ const ZonaBahayaDetailPage = () => {
                                             <td style={colonStyle}>:</td>
                                             <td style={tdStyle}>{zone.status_zona || "-"}</td>
                                         </tr>
-                                        <tr>
+                                        {/* <tr>
                                             <th style={thStyle}>Risiko</th>
                                             <td style={colonStyle}>:</td>
                                             <td style={tdStyle}>{zone.tingkat_risiko || "-"}</td>
-                                        </tr>
+                                        </tr> */}
                                         <tr>
                                             <th style={thStyle}>Radius</th>
                                             <td style={colonStyle}>:</td>
@@ -290,7 +295,7 @@ const ZonaBahayaDetailPage = () => {
                                     boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
                                 }}
                             >
-                                <h3 style={{ marginTop: 0, marginBottom: "16px" ,color:"black"}}>
+                                <h3 style={{ marginTop: 0, marginBottom: "16px", color: "black" }}>
                                     Ringkasan Voting
                                 </h3>
 

@@ -1209,10 +1209,12 @@
 // }
 
 import 'dart:io';
-
+import 'dart:async';
+// import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_app/theme/app_theme.dart';
+import 'package:mobile_app/widgets/message_popup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:typed_data';
 import 'package:mobile_app/services/profile_service.dart';
@@ -1340,6 +1342,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _saving = true);
+
     try {
       final payload = <String, dynamic>{
         "nik": _nik.text.trim(),
@@ -1352,29 +1355,64 @@ class _ProfilePageState extends State<ProfilePage> {
         "username": _username.text.trim(),
       };
 
-      // kosong => null
       payload.removeWhere((k, v) => v is String && v.trim().isEmpty);
 
-      final updated = await ProfileService.updateMe(payload);
+      final updated = await ProfileService.updateMe(
+        payload,
+      ).timeout(const Duration(seconds: 10));
 
       setState(() {
-        _me = updated['data'] ?? _me; // kalau backend return {data:...}
+        _me = updated['data'] ?? _me;
         _edit = false;
       });
 
       await _loadMe();
-      _snack("✅ Profil berhasil diperbarui");
+      MessagePopup.success(context, "Profil berhasil diperbarui");
+    } on TimeoutException {
+      MessagePopup.error(
+        context,
+        "Server lama merespon, silahkan coba lagi nanti.",
+      );
+    } on SocketException {
+      MessagePopup.error(
+        context,
+        "Server lama merespon, silahkan coba lagi nanti.",
+      );
     } catch (e) {
-      _snack(" $e");
+      final errorStr = e.toString().toLowerCase();
+
+      if (errorStr.contains('500') ||
+          errorStr.contains('socketexception') ||
+          errorStr.contains('connection refused') ||
+          errorStr.contains('failed host lookup') ||
+          errorStr.contains('timeout') ||
+          errorStr.contains('timed out')) {
+        MessagePopup.error(
+          context,
+          "Server lama merespon, silahkan coba lagi nanti.",
+        );
+      } else {
+        MessagePopup.error(context, "Gagal simpan profil: $e");
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> _resubmitKtp() async {
-    final status = (_me?['status_verifikasi'] ?? 'pending').toString();
-    if (status != 'rejected') {
-      _snack("KTP hanya bisa dikirim ulang kalau status kamu REJECTED.");
+    final status = (_me?['status_verifikasi'] ?? 'pending')
+        .toString()
+        .toLowerCase();
+
+    // Blokir hanya jika statusnya 'verified' (atau selain pending & rejected)
+    if (status != 'rejected' && status != 'pending') {
+      // _snack(
+      //   "KTP hanya bisa dikirim ulang jika status kamu REJECTED atau PENDING.",
+      // );
+      MessagePopup.warning(
+        context,
+        "KTP hanya bisa dikirim ulang jika status kamu REJECTED atau PENDING.",
+      );
       return;
     }
 
@@ -1417,7 +1455,8 @@ class _ProfilePageState extends State<ProfilePage> {
       await _loadMe();
       _snack("✅ KTP terkirim ulang. Status jadi PENDING lagi.");
     } catch (e) {
-      _snack(" $e");
+      // _snack(" $e");
+      MessagePopup.warning(context, "$e");
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -1581,7 +1620,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final catatan = (me?['catatan_verifikasi'] ?? '').toString();
     final namaUser = _nama.text.isNotEmpty ? _nama.text : 'User';
 
-    final canResubmit = status == 'rejected';
+    // Tombol muncul jika status rejected ATAU pending
+    final canResubmit =
+        status.toLowerCase() == 'rejected' || status.toLowerCase() == 'pending';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -1617,6 +1658,40 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    if (me['status_verifikasi'] == 'takedown') ...[
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Akun dinonaktifkan sementara",
+                              style: TextStyle(
+                                color: Colors.red.shade800,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              me['catatan_verifikasi'] ??
+                                  "Silakan hubungi admin.",
+                              style: TextStyle(
+                                color: Colors.red.shade700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     // ===== HEADER AVATAR =====
                     CircleAvatar(
                       radius: 46,
@@ -1864,7 +1939,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: ElevatedButton.icon(
                           onPressed: _saving ? null : _save,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF8B5A24),
+                            backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(

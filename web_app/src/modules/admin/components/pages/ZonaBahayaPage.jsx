@@ -633,7 +633,9 @@ const ZonaBahayaPage = () => {
                                 " (Zona ini sedang diisi dari data laporan kejahatan)"}
                         </p>
 
-                        {errorMsg && <div className="login-error">{errorMsg}</div>}
+                        {errorMsg && <div className="login-error" style={{
+                            color:"red",
+                        }}>{errorMsg}</div>}
 
                         {form.id_laporan_sumber && (
                             <div
@@ -949,7 +951,7 @@ const ZonaBahayaPage = () => {
                                 </div>
 
                                 <div className="form-row">
-                                    <div className="form-group flex-1">
+                                    {/* <div className="form-group flex-1">
                                         <label>Tingkat Risiko</label>
                                         <select
                                             className="form-control"
@@ -961,7 +963,7 @@ const ZonaBahayaPage = () => {
                                             <option value="sedang">Sedang</option>
                                             <option value="tinggi">Tinggi</option>
                                         </select>
-                                    </div>
+                                    </div> */}
                                     <div className="form-group flex-1">
                                         <label>Status Validasi</label>
                                         <select
@@ -1004,9 +1006,12 @@ const ZonaBahayaPage = () => {
                         <div className="zona-table-wrapper">
                             <table className="zona-table">
                                 <thead>
-                                    <tr>
+                                    <tr style={{
+                                        textAlign:"center",
+                                        // display:"flex"
+                                    }}>
                                         <th>Nama Zona</th>
-                                        <th>Risiko</th>
+                                        {/* <th>Risiko</th> */}
                                         <th>Radius (m)</th>
                                         <th>Warna</th>
                                         <th>Status</th>
@@ -1018,7 +1023,7 @@ const ZonaBahayaPage = () => {
                                     {zones.map((z) => (
                                         <tr key={z.id_zona}>
                                             <td>{z.nama_zona}</td>
-                                            <td>{z.tingkat_risiko}</td>
+                                            {/* <td>{z.tingkat_risiko}</td> */}
                                             <td>{z.radius_meter}</td>
                                             <td>
                                                 <span

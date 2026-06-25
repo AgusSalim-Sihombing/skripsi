@@ -14,11 +14,12 @@ class TentangAplikasiPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF8B5A24);
+    const primary = Color.fromARGB(255, 58, 73, 238);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Tentang Aplikasi", style: TextStyle(fontSize: 16)),
+        centerTitle: true,
         // backgroundColor: primary,
       ),
       body: SingleChildScrollView(
@@ -235,13 +236,13 @@ class _SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: const Color.fromARGB(255, 255, 255, 255),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             // color: Colors.black.withOpacity(0.05),
             blurRadius: 12,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -309,7 +310,7 @@ class _StepRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF8B5A24);
+    const primary = Color.fromARGB(255, 35, 61, 231);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -337,7 +338,7 @@ class _StepRow extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 13, height: 1.35 , color: Colors.white),
+              style: const TextStyle(fontSize: 13, height: 1.35 ),
             ),
           ),
         ],
@@ -372,7 +373,7 @@ class _ActionChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: Colors.white),
+            Icon(icon, size: 18, color: const Color.fromARGB(255, 7, 46, 237)),
             const SizedBox(width: 8),
             Text(
               label,

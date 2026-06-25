@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:mobile_app/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mobile_app/config/api_config.dart'; // Sesuaikan path ini
+import 'package:mobile_app/config/api_config.dart';
 
 class DetailLaporanCepat extends StatefulWidget {
   final Map<String, dynamic> laporan;
@@ -19,13 +21,16 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
   bool _loadingFoto = true;
   String? _fotoError;
 
+  String? _address;
+  bool _loadingAddress = false;
+
   @override
   void initState() {
     super.initState();
     _fetchFoto();
+    _fetchAddress();
   }
 
-  // Mengambil foto dari backend berdasarkan id_laporan
   Future<void> _fetchFoto() async {
     final idLaporan = widget.laporan['id_laporan'];
     if (idLaporan == null) {
@@ -40,10 +45,10 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('user_token');
 
-      // ASUMSI ENDPOINT: /mobile/laporan-cepat/:id/foto
-      // (Jika kamu belum punya endpoint ini di backend Node.js, kamu harus membuatnya ya)
-      final url = Uri.parse('${ApiConfig.baseUrl}/mobile/laporan-cepat/$idLaporan/foto');
-      
+      final url = Uri.parse(
+        '${ApiConfig.baseUrl}/mobile/laporan-cepat/$idLaporan/foto',
+      );
+
       final res = await http.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
@@ -70,6 +75,68 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
         _fotoError = "Terjadi kesalahan koneksi";
         _loadingFoto = false;
       });
+    }
+  }
+
+  Future<void> _fetchAddress() async {
+    final latRaw = widget.laporan['latitude'];
+    final lngRaw = widget.laporan['longitude'];
+
+    if (latRaw == null || lngRaw == null) {
+      setState(() {
+        _address = "Alamat tidak tersedia";
+      });
+      return;
+    }
+
+    final lat = double.tryParse(latRaw.toString());
+    final lng = double.tryParse(lngRaw.toString());
+
+    if (lat == null || lng == null) {
+      setState(() {
+        _address = "Alamat tidak tersedia";
+      });
+      return;
+    }
+
+    setState(() => _loadingAddress = true);
+
+    try {
+      final uri = Uri.https("nominatim.openstreetmap.org", "/reverse", {
+        "format": "json",
+        "lat": lat.toString(),
+        "lon": lng.toString(),
+        "zoom": "18",
+        "addressdetails": "1",
+      });
+
+      final res = await http.get(
+        uri,
+        headers: {"User-Agent": "sigap_app/1.0 (mobile)"},
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final displayName = data["display_name"]?.toString();
+
+        setState(() {
+          _address = (displayName != null && displayName.trim().isNotEmpty)
+              ? displayName
+              : "Alamat tidak tersedia";
+        });
+      } else {
+        setState(() {
+          _address = "Alamat tidak tersedia";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _address = "Alamat tidak tersedia";
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _loadingAddress = false);
+      }
     }
   }
 
@@ -111,7 +178,6 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
     return waktu;
   }
 
-  // Format created_at (Contoh: "2026-03-21T18:34:48.000Z") ke waktu lokal
   String _formatCreatedAt(String? createdAt) {
     if (createdAt == null || createdAt.isEmpty) return '-';
     try {
@@ -126,12 +192,17 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
     return TableRow(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 3),
           child: Text(
             label,
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color.fromARGB(255, 0, 0, 0),
+              fontWeight: FontWeight.w600
+            ),
           ),
         ),
+
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 6),
           child: Text(":", style: TextStyle(fontSize: 13, color: Colors.grey)),
@@ -140,7 +211,11 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Text(
             value,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Color.fromARGB(255, 80, 80, 80),
+            ),
           ),
         ),
       ],
@@ -152,27 +227,24 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
     final status = (widget.laporan['status_validasi'] ?? 'pending').toString();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Laporan'),
-        elevation: 1,
-      ),
+      appBar: AppBar(title: const Text('Detail Laporan'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ==== INFO LAPORAN ====
             Card(
+              color: AppColors.borderSoft,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // HEADER: Judul & Status
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -195,7 +267,9 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
                               color: _statusColor(status),
                             ),
                           ),
-                          backgroundColor: _statusColor(status).withOpacity(0.12),
+                          backgroundColor: _statusColor(
+                            status,
+                          ).withOpacity(0.12),
                           side: BorderSide.none,
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -204,7 +278,6 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
                     ),
                     const Divider(height: 24, thickness: 1),
 
-                    // BODY: Tabel Info
                     Table(
                       columnWidths: const {
                         0: IntrinsicColumnWidth(),
@@ -213,24 +286,37 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
                       },
                       children: [
                         _buildTableRow(
-                          "Dikirim pada", 
-                          _formatCreatedAt(widget.laporan['created_at']?.toString())
+                          "Dikirim pada",
+                          _formatCreatedAt(
+                            widget.laporan['created_at']?.toString(),
+                          ),
                         ),
                         _buildTableRow(
-                          "Tanggal Kejadian", 
-                          _formatTanggal(widget.laporan['tanggal_kejadian']?.toString())
+                          "Tanggal Kejadian",
+                          _formatTanggal(
+                            widget.laporan['tanggal_kejadian']?.toString(),
+                          ),
                         ),
                         _buildTableRow(
-                          "Waktu Kejadian", 
-                          _formatWaktu(widget.laporan['waktu_kejadian']?.toString())
+                          "Waktu Kejadian",
+                          _formatWaktu(
+                            widget.laporan['waktu_kejadian']?.toString(),
+                          ),
                         ),
                         _buildTableRow(
-                          "Koordinat", 
-                          "${widget.laporan['latitude'] ?? '-'}, ${widget.laporan['longitude'] ?? '-'}"
+                          "Lokasi",
+                          _loadingAddress
+                              ? "Mengambil alamat..."
+                              : (_address ?? "Alamat tidak tersedia"),
                         ),
                         _buildTableRow(
-                          "Deskripsi", 
-                          widget.laporan['deskripsi']?.toString() ?? 'Tidak ada deskripsi'
+                          "Koordinat",
+                          "${widget.laporan['latitude'] ?? '-'}, ${widget.laporan['longitude'] ?? '-'}",
+                        ),
+                        _buildTableRow(
+                          "Deskripsi",
+                          widget.laporan['deskripsi']?.toString() ??
+                              'Tidak ada deskripsi',
                         ),
                       ],
                     ),
@@ -241,8 +327,8 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
 
             const SizedBox(height: 16),
 
-            // ==== KOTAK FOTO ====
             Card(
+              color: AppColors.borderSoft,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -268,41 +354,43 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
                               SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                               SizedBox(width: 10),
                               Text("Memuat foto..."),
                             ],
                           )
                         : _fotoBytes != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: InteractiveViewer(
-                                  minScale: 1,
-                                  maxScale: 4,
-                                  child: Image.memory(
-                                    _fotoBytes!,
-                                    width: double.infinity,
-                                    height: 220,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              )
-                            : Container(
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: InteractiveViewer(
+                              minScale: 1,
+                              maxScale: 4,
+                              child: Image.memory(
+                                _fotoBytes!,
                                 width: double.infinity,
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  _fotoError ?? "Foto tidak tersedia",
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black54,
-                                  ),
-                                ),
+                                height: 220,
+                                fit: BoxFit.cover,
                               ),
+                            ),
+                          )
+                        : Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _fotoError ?? "Foto tidak tersedia",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),

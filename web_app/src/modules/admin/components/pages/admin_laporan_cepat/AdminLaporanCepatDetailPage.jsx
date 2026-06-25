@@ -8,13 +8,15 @@ import {
     rejectLaporan,
     deleteLaporan,
 } from "../../../../../services/laporanCepatService";
-
+import ActionNotification from "../../../../shared/components/action_notification/ActionNotification";
 const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL;
 
 const statusLabel = (status) => {
     if (!status) return "Pending";
     return status.charAt(0).toUpperCase() + status.slice(1);
 };
+
+
 
 const AdminLaporanCepatDetailPage = () => {
     const { id } = useParams();
@@ -27,6 +29,26 @@ const AdminLaporanCepatDetailPage = () => {
     const [errorMsg, setErrorMsg] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [notification, setNotification] = useState({
+        open: false,
+        type: "success",
+        message: "",
+    });
+
+    const showNotification = (type, message) => {
+        setNotification({
+            open: true,
+            type,
+            message,
+        });
+    };
+
+    const closeNotification = () => {
+        setNotification((prev) => ({
+            ...prev,
+            open: false,
+        }));
+    };
 
     const fotoUrl = `${API_BASE_URL}/admin/laporan-cepat/${id}/foto`;
 
@@ -66,13 +88,20 @@ const AdminLaporanCepatDetailPage = () => {
 
     const handleSetStatus = async (newStatus) => {
         if (!window.confirm(`Ubah status laporan menjadi ${newStatus}?`)) return;
+
         setSaving(true);
+
         try {
-            if (newStatus === "approved") await approveLaporan(laporan.id_laporan);
-            else if (newStatus === "rejected") await rejectLaporan(laporan.id_laporan);
+            if (newStatus === "approved") {
+                await approveLaporan(laporan.id_laporan);
+            } else if (newStatus === "rejected") {
+                await rejectLaporan(laporan.id_laporan);
+            }
+
             await loadDetail();
-            setSuccessMsg(`Status berhasil diubah.`);
+            showNotification("success", "Status laporan berhasil diubah.");
         } catch (err) {
+            showNotification("error", "Gagal mengubah status laporan.");
             setErrorMsg("Gagal mengubah status");
         } finally {
             setSaving(false);
@@ -84,12 +113,18 @@ const AdminLaporanCepatDetailPage = () => {
         if (!window.confirm(`Yakin ingin menghapus laporan dengan id : ${laporan.id_laporan} ini?`)) return;
 
         try {
-            const res = await deleteLaporan(laporan.id_laporan)
-            alert("Berhasil Menghapus Laporan")
-            navigate("/admin/laporan-cepat");
+            await deleteLaporan(laporan.id_laporan);
+
+            showNotification("success", "Laporan berhasil dihapus.");
+
+            setTimeout(() => {
+                navigate("/admin/laporan-cepat");
+            }, 1200);
         } catch (err) {
             console.error("delete report error:", err);
-            alert("Gagal Menghapus Laporan")
+
+            showNotification("error", "Gagal menghapus laporan.");
+
             setErrorMsg(
                 err?.response?.data?.message || "Terjadi kesalahan saat menghapus laporan"
             );
@@ -104,7 +139,7 @@ const AdminLaporanCepatDetailPage = () => {
                         <h2>Detail Laporan Cepat</h2>
                         <p>Validasi informasi laporan dan kelola status kejadian di bawah ini.</p>
                     </div>
-                    
+
                 </header>
 
                 {errorMsg && <div className="alert alert-danger">{errorMsg}</div>}
@@ -130,7 +165,7 @@ const AdminLaporanCepatDetailPage = () => {
                                 <table className="info-table" >
                                     <tbody>
                                         <tr >
-                                            <th>ID Laporan</th>
+                                            <th>ID Sumber Laporan</th>
                                             <td>{laporan.id_laporan}</td>
                                         </tr>
                                         <tr style={{ background: "white" }}>
@@ -172,7 +207,7 @@ const AdminLaporanCepatDetailPage = () => {
                                 <div className="action-footer">
                                     <button className="btn btn-approve" onClick={() => handleSetStatus("approved")} disabled={saving}>Setujui</button>
                                     <button className="btn btn-reject" onClick={() => handleSetStatus("rejected")} disabled={saving}>Tolak</button>
-                                    <button className="btn btn-danger" onClick={handleDelete}>Hapus Laporan</button>
+                                    {/* <button className="btn btn-danger" onClick={handleDelete}>Hapus Laporan</button> */}
                                     <button className="btn btn-warning" onClick={() => navigate(`/admin/zona-bahaya?fromLaporan=${id}`)}>Buat Zona Bahaya</button>
                                 </div>
                             </div>
@@ -209,7 +244,15 @@ const AdminLaporanCepatDetailPage = () => {
                     </div>
                 )}
             </div>
+            <ActionNotification
+                open={notification.open}
+                type={notification.type}
+                message={notification.message}
+                onClose={closeNotification}
+                duration={2200}
+            />
         </AdminLayout>
+
     );
 };
 

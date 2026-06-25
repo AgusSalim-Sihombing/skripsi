@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/services/police_report_service.dart';
+import 'package:mobile_app/theme/app_theme.dart';
 import 'detail_laporan_kepolisian_page.dart';
 
 class BuatLaporanKepolisianPage extends StatefulWidget {
@@ -245,6 +246,7 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
 
   Widget _section(String title, List<Widget> children) {
     return Card(
+      color: AppColors.borderSoft,
       elevation: 0.5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -663,7 +665,7 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5A24),
+                    backgroundColor: AppColors.primaryBlue,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

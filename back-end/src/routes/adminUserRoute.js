@@ -10,6 +10,8 @@ const {
   updateUserAdmin,
   deleteUserAdmin,
   fotoKtpUserAdmin,
+  takedownUserAdmin,
+  restoreUserAdmin
 } = require("../controller/adminUserController");
 
 // prefix global: /api/admin (lihat index.js)
@@ -19,5 +21,8 @@ router.post("/users", authAdmin, createUserAdmin);
 router.put("/users/:id", authAdmin, updateUserAdmin);
 router.delete("/users/:id", authAdmin, deleteUserAdmin);
 router.get("/users/:id/ktp", fotoKtpUserAdmin);
+router.patch("/users/:id/takedown", authAdmin, takedownUserAdmin);
+router.patch("/users/:id/restore", authAdmin, restoreUserAdmin);
+
 
 module.exports = router;

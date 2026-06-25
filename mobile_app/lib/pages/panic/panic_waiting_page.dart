@@ -28,12 +28,12 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
   final SocketService _socket = SocketService();
   String _statusText = "⏳ Menunggu respon officer...";
   Timer? _pollTimer;
+  bool _cancelling = false;
 
   @override
   void initState() {
     super.initState();
 
-    // polling tiap 2 detik (fallback kalau socket miss)
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _checkStatusOnce();
@@ -62,7 +62,6 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
       );
     });
 
-    // event utama
     _socket.on("panic:responded", (payload) async {
       final data = Map<String, dynamic>.from(payload);
 
@@ -92,12 +91,25 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
       );
     });
 
-    // officer selesai -> balik home
     _socket.on("panic:resolved", (payload) async {
       final data = Map<String, dynamic>.from(payload);
       final pidRaw = data["panicId"];
       final pid = (pidRaw is num) ? pidRaw.toInt() : int.tryParse("$pidRaw");
       if (pid == null || pid != widget.panicId) return;
+
+      await _goLanding();
+    });
+
+    _socket.on("panic:cancelled", (payload) async {
+      final data = Map<String, dynamic>.from(payload);
+      final pidRaw = data["panicId"];
+      final pid = (pidRaw is num) ? pidRaw.toInt() : int.tryParse("$pidRaw");
+      if (pid == null || pid != widget.panicId) return;
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Panic berhasil dibatalkan")),
+      );
 
       await _goLanding();
     });
@@ -135,12 +147,11 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
       if (resp.statusCode != 200) return;
 
       final json = jsonDecode(resp.body);
-      final status = (json["status"] ?? "").toString();
+      final status = (json["status"] ?? "").toString().toUpperCase();
 
       if (!mounted) return;
 
       if (status == "ASSIGNED") {
-        // ✅ bawa lastLat/lastLng dari API biar citizen map langsung hidup
         final officer = {
           "id": json["assignedOfficerId"],
           "nama": json["assignedOfficerName"],
@@ -161,15 +172,76 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
             ),
           ),
         );
-      } else if (status == "RESOLVED") {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove("active_panic_id");
-
-        _pollTimer?.cancel();
-        if (!mounted) return;
-        Navigator.popUntil(context, (route) => route.isFirst);
+      } else if (status == "RESOLVED" || status == "CANCELLED") {
+        await _goLanding();
       }
     } catch (_) {}
+  }
+
+  Future<void> _cancelPanic() async {
+    if (_cancelling) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Batalkan Panic?"),
+        content: const Text("Panggilan darurat akan dibatalkan. Lanjutkan?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Tidak"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Ya, Batalkan"),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    setState(() => _cancelling = true);
+
+    try {
+      final resp = await http.patch(
+        Uri.parse(
+          "${widget.baseUrl}/api/mobile/panic/${widget.panicId}/cancel",
+        ),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
+
+      final body = jsonDecode(resp.body);
+
+      if (resp.statusCode == 200 && body["success"] == true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(body["message"] ?? "Panic berhasil dibatalkan"),
+          ),
+        );
+        await _goLanding();
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              body["message"] ?? "Gagal membatalkan panic (${resp.statusCode})",
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error cancel panic: $e")));
+    } finally {
+      if (mounted) setState(() => _cancelling = false);
+    }
   }
 
   @override
@@ -181,6 +253,7 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
     _socket.off("disconnect");
     _socket.off("panic:responded");
     _socket.off("panic:resolved");
+    _socket.off("panic:cancelled");
 
     super.dispose();
   }
@@ -188,10 +261,7 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Menunggu Respon"),
-        backgroundColor: const Color(0xFF8B5A24),
-      ),
+      appBar: AppBar(title: const Text("Menunggu Respon"), centerTitle: true),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(18),
@@ -212,6 +282,29 @@ class _PanicWaitingPageState extends State<PanicWaitingPage> {
               Text(
                 "Panic ID: ${widget.panicId}",
                 style: const TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: 220,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: _cancelling ? null : _cancelPanic,
+                  icon: _cancelling
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.close),
+                  label: Text(
+                    _cancelling ? "Membatalkan..." : "Batalkan Panic",
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                  ),
+                ),
               ),
             ],
           ),

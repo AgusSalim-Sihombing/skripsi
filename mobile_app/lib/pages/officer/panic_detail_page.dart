@@ -360,7 +360,8 @@ class _PanicDetailPageState extends State<PanicDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Panic Detail"),
-        backgroundColor: const Color(0xFF8B5A24),
+        centerTitle: true,
+        // backgroundColor: const Color(0xFF8B5A24),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -454,7 +455,7 @@ class _PanicDetailPageState extends State<PanicDetailPage> {
               ),
               icon: const Icon(Icons.directions, color: Colors.white),
               label: const Text(
-                "BUKA RUTE (GOOGLE MAPS)",
+                "BUKA RUTE",
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,

@@ -8,7 +8,7 @@ import 'package:mobile_app/theme/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  debugPrint("Aplikasi dimulai...");
+  // debugPrint("Aplikasi dimulai...");
   await BackgroundZoneService.init();
   await NotificationService.init();
   await ThemeController.loadTheme();

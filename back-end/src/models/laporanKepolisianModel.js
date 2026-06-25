@@ -2,7 +2,7 @@ const db = require("../config/database");
 
 // =================== MOBILE (MASYARAKAT) ===================
 const createReport = async (userId, data) => {
-    const sql = `
+  const sql = `
     INSERT INTO laporan_kepolisian (
       pelapor_user_id, status,
       waktu_kejadian_hari, waktu_kejadian_tanggal, waktu_kejadian_jam,
@@ -21,72 +21,72 @@ const createReport = async (userId, data) => {
     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `;
 
-    const params = [
-        userId, "pending",
+  const params = [
+    userId, "pending",
 
-        data.waktu_kejadian_hari || null,
-        data.waktu_kejadian_tanggal || null,
-        data.waktu_kejadian_jam || null,
+    data.waktu_kejadian_hari || null,
+    data.waktu_kejadian_tanggal || null,
+    data.waktu_kejadian_jam || null,
 
-        data.tempat_jalan || null,
-        data.tempat_desa_kel || null,
-        data.tempat_kecamatan || null,
-        data.tempat_kab_kota || null,
+    data.tempat_jalan || null,
+    data.tempat_desa_kel || null,
+    data.tempat_kecamatan || null,
+    data.tempat_kab_kota || null,
 
-        data.apa_terjadi || null,
+    data.apa_terjadi || null,
 
-        data.terlapor_nama || null,
-        data.terlapor_jk || null,
-        data.terlapor_alamat || null,
-        data.terlapor_pekerjaan || null,
-        data.terlapor_kontak || null,
+    data.terlapor_nama || null,
+    data.terlapor_jk || null,
+    data.terlapor_alamat || null,
+    data.terlapor_pekerjaan || null,
+    data.terlapor_kontak || null,
 
-        data.korban_nama || null,
-        data.korban_jk || null,
-        data.korban_alamat || null,
-        data.korban_pekerjaan || null,
-        data.korban_kontak || null,
+    data.korban_nama || null,
+    data.korban_jk || null,
+    data.korban_alamat || null,
+    data.korban_pekerjaan || null,
+    data.korban_kontak || null,
 
-        data.bagaimana_terjadi || null,
+    data.bagaimana_terjadi || null,
 
-        data.dilaporkan_hari || null,
-        data.dilaporkan_tanggal || null,
-        data.dilaporkan_jam || null,
+    data.dilaporkan_hari || null,
+    data.dilaporkan_tanggal || null,
+    data.dilaporkan_jam || null,
 
-        data.tindak_pidana || null,
+    data.tindak_pidana || null,
 
-        data.saksi1_nama || null,
-        data.saksi1_umur ?? null,
-        data.saksi1_alamat || null,
-        data.saksi1_pekerjaan || null,
+    data.saksi1_nama || null,
+    data.saksi1_umur ?? null,
+    data.saksi1_alamat || null,
+    data.saksi1_pekerjaan || null,
 
-        data.saksi2_nama || null,
-        data.saksi2_umur ?? null,
-        data.saksi2_alamat || null,
-        data.saksi2_pekerjaan || null,
+    data.saksi2_nama || null,
+    data.saksi2_umur ?? null,
+    data.saksi2_alamat || null,
+    data.saksi2_pekerjaan || null,
 
-        data.barang_bukti || null,
-        data.uraian_singkat || null,
-        data.tindakan_dilakukan || null,
+    data.barang_bukti || null,
+    data.uraian_singkat || null,
+    data.tindakan_dilakukan || null,
 
-        data.mengetahui_kepala_jabatan || null,
-        data.mengetahui_kepala_nama || null,
-        data.mengetahui_kepala_pangkat_nrp || null,
+    data.mengetahui_kepala_jabatan || null,
+    data.mengetahui_kepala_nama || null,
+    data.mengetahui_kepala_pangkat_nrp || null,
 
-        data.pelapor_nama || null,
-        data.pelapor_pangkat_nrp || null,
-        data.pelapor_kesatuan || null,
-        data.pelapor_kontak || null,
-    ];
+    data.pelapor_nama || null,
+    data.pelapor_pangkat_nrp || null,
+    data.pelapor_kesatuan || null,
+    data.pelapor_kontak || null,
+  ];
 
-    const [res] = await db.execute(sql, params);
-    return res.insertId;
+  const [res] = await db.execute(sql, params);
+  return res.insertId;
 };
 
 const getMineList = async (userId, { page = 1, limit = 20 }) => {
-    const offset = (page - 1) * limit;
-    const [rows] = await db.execute(
-        `
+  const offset = (page - 1) * limit;
+  const [rows] = await db.execute(
+    `
     SELECT id, status, tindak_pidana, tempat_kab_kota, created_at,
            assigned_officer_user_id, responded_at, completed_at
     FROM laporan_kepolisian
@@ -94,24 +94,24 @@ const getMineList = async (userId, { page = 1, limit = 20 }) => {
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
     `,
-        [userId, Number(limit), Number(offset)]
-    );
-    return rows;
+    [userId, Number(limit), Number(offset)]
+  );
+  return rows;
 };
 
 const getMineDetail = async (userId, id) => {
-    const [rows] = await db.execute(
-        `SELECT * FROM laporan_kepolisian WHERE id = ? AND pelapor_user_id = ?`,
-        [id, userId]
-    );
-    return rows[0];
+  const [rows] = await db.execute(
+    `SELECT * FROM laporan_kepolisian WHERE id = ? AND pelapor_user_id = ?`,
+    [id, userId]
+  );
+  return rows[0];
 };
 
 // =================== OFFICER ===================
 const listPending = async ({ page = 1, limit = 20 }) => {
-    const offset = (page - 1) * limit;
-    const [rows] = await db.execute(
-        `
+  const offset = (page - 1) * limit;
+  const [rows] = await db.execute(
+    `
     SELECT lk.id, lk.status, lk.tindak_pidana, lk.tempat_kab_kota, lk.created_at,
            u.username AS pelapor_username, u.nama AS pelapor_nama
     FROM laporan_kepolisian lk
@@ -121,36 +121,36 @@ const listPending = async ({ page = 1, limit = 20 }) => {
     ORDER BY lk.created_at ASC
     LIMIT ? OFFSET ?
     `,
-        [Number(limit), Number(offset)]
-    );
-    return rows;
+    [Number(limit), Number(offset)]
+  );
+  return rows;
 };
 
 const listMineAsOfficer = async (officerId, { status, page = 1, limit = 20 }) => {
-    const offset = (page - 1) * limit;
+  const offset = (page - 1) * limit;
 
-    let sql = `
+  let sql = `
     SELECT id, status, tindak_pidana, tempat_kab_kota, created_at, responded_at, completed_at
     FROM laporan_kepolisian
     WHERE assigned_officer_user_id = ?
   `;
-    const params = [officerId];
+  const params = [officerId];
 
-    if (status) {
-        sql += ` AND status = ?`;
-        params.push(status);
-    }
+  if (status) {
+    sql += ` AND status = ?`;
+    params.push(status);
+  }
 
-    sql += ` ORDER BY responded_at DESC, created_at DESC LIMIT ? OFFSET ?`;
-    params.push(Number(limit), Number(offset));
+  sql += ` ORDER BY responded_at DESC, created_at DESC LIMIT ? OFFSET ?`;
+  params.push(Number(limit), Number(offset));
 
-    const [rows] = await db.execute(sql, params);
-    return rows;
+  const [rows] = await db.execute(sql, params);
+  return rows;
 };
 
 const officerGetDetail = async (officerId, id) => {
-    const [rows] = await db.execute(
-        `
+  const [rows] = await db.execute(
+    `
     SELECT *
     FROM laporan_kepolisian
     WHERE id = ?
@@ -159,15 +159,15 @@ const officerGetDetail = async (officerId, id) => {
         OR assigned_officer_user_id = ?
       )
     `,
-        [id, officerId]
-    );
-    return rows[0];
+    [id, officerId]
+  );
+  return rows[0];
 };
 
 // ✅ ATOMIC TAKE: biar 2 officer gak bisa rebutan
 const respond = async (officerId, id) => {
-    const [res] = await db.execute(
-        `
+  const [res] = await db.execute(
+    `
     UPDATE laporan_kepolisian
     SET status = 'on_process',
         assigned_officer_user_id = ?,
@@ -176,14 +176,14 @@ const respond = async (officerId, id) => {
       AND status = 'pending'
       AND assigned_officer_user_id IS NULL
     `,
-        [officerId, id]
-    );
-    return res.affectedRows; // 1 = sukses ambil, 0 = udah diambil orang / bukan pending
+    [officerId, id]
+  );
+  return res.affectedRows; // 1 = sukses ambil, 0 = udah diambil orang / bukan pending
 };
 
 const finish = async (officerId, id) => {
-    const [res] = await db.execute(
-        `
+  const [res] = await db.execute(
+    `
     UPDATE laporan_kepolisian
     SET status = 'selesai',
         completed_at = NOW()
@@ -191,9 +191,9 @@ const finish = async (officerId, id) => {
       AND status = 'on_process'
       AND assigned_officer_user_id = ?
     `,
-        [id, officerId]
-    );
-    return res.affectedRows;
+    [id, officerId]
+  );
+  return res.affectedRows;
 };
 
 const cancelMine = async (userId, id) => {
@@ -309,17 +309,17 @@ const adminUpdateStatus = async (id, { status }) => {
 };
 
 module.exports = {
-    createReport,
-    getMineList,
-    getMineDetail,
+  createReport,
+  getMineList,
+  getMineDetail,
 
-    listPending,
-    listMineAsOfficer,
-    officerGetDetail,
-    respond,
-    finish,
-    cancelMine,
-    adminList,
-    getById,
-    adminUpdateStatus,
+  listPending,
+  listMineAsOfficer,
+  officerGetDetail,
+  respond,
+  finish,
+  cancelMine,
+  adminList,
+  getById,
+  adminUpdateStatus,
 };

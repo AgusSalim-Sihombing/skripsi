@@ -1523,7 +1523,6 @@ class _RegisterPageState extends State<RegisterPage> {
     Widget? suffixIcon,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
@@ -1542,8 +1541,6 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
-
-
 
   @override
   void dispose() {
@@ -2072,7 +2069,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
-          const FloatingThemeModeWidget()
+          const FloatingThemeModeWidget(),
         ],
       ),
     );

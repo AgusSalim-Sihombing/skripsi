@@ -1,7 +1,7 @@
 const userModel = require("../../models/userModel");
 const officerLiveModel = require("../../models/officerLiveModel");
 const panicModel = require("../../models/panicModel");
-
+const db = require("../../config/database")
 // OFFICER: update lokasi + duty
 // OFFICER: update lokasi + duty
 const updateOfficerLocation = async (req, res) => {
@@ -148,6 +148,12 @@ const respondPanic = async (req, res) => {
 
         const panic = await panicModel.getPanicById(panicId);
         const officerLive = await officerLiveModel.getOfficerLiveByUserId(officerId);
+        await panicModel.setOfficerLocationSnap({
+            panicId,
+            lat: officerLive?.last_lat ?? null,
+            lng: officerLive?.last_lng ?? null,
+            updatedAt: officerLive?.last_loc_updated_at ?? null,
+        });
         // setelah const officerLive = await officerLiveModel.getOfficerLiveByUserId(officerId);
 
         if (officerLive?.last_lat != null && officerLive?.last_lng != null) {
@@ -314,6 +320,117 @@ const getPanicHistoryDetail = async (req, res) => {
     }
 };
 
+const cancelPanicByCitizen = async (req, res) => {
+    let conn;
+    try {
+        const panicId = parseInt(req.params.id, 10);
+        const userId = req.user.id;
+
+        if (!panicId || Number.isNaN(panicId)) {
+            return res.status(400).json({
+                success: false,
+                message: "ID panic tidak valid",
+            });
+        }
+
+        conn = await db.getConnection();
+        await conn.beginTransaction();
+
+        const [rows] = await conn.execute(
+            `
+      SELECT id, citizen_id, status, assigned_officer_id
+      FROM panic_events
+      WHERE id = ?
+      LIMIT 1
+      `,
+            [panicId]
+        );
+
+        if (!rows.length) {
+            await conn.rollback();
+            conn.release();
+            return res.status(404).json({
+                success: false,
+                message: "Data panic tidak ditemukan",
+            });
+        }
+
+        const panic = rows[0];
+
+        if (panic.citizen_id !== userId) {
+            await conn.rollback();
+            conn.release();
+            return res.status(403).json({
+                success: false,
+                message: "Kamu tidak berhak membatalkan panic ini",
+            });
+        }
+
+        const currentStatus = String(panic.status || "").toUpperCase();
+
+        if (["ASSIGNED", "RESPONDED", "RESOLVED", "CANCELLED"].includes(currentStatus)) {
+            await conn.rollback();
+            conn.release();
+            return res.status(400).json({
+                success: false,
+                message: `Panic tidak bisa dibatalkan karena status sudah ${currentStatus}`,
+            });
+        }
+
+        await conn.execute(
+            `
+      UPDATE panic_events
+      SET status = 'CANCELLED',
+          cancelled_at = NOW(),
+          updated_at = NOW()
+      WHERE id = ?
+      `,
+            [panicId]
+        );
+
+        if (panic.assigned_officer_id) {
+            await conn.execute(
+                `
+        UPDATE panic_dispatch_targets
+        SET dispatch_status = 'cancelled',
+            updated_at = NOW()
+        WHERE panic_event_id = ?
+        `,
+                [panicId]
+            );
+        }
+
+        await conn.commit();
+        conn.release();
+
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("panic:cancelled", {
+                panicId,
+                status: "CANCELLED",
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: "Panic berhasil dibatalkan",
+        });
+    } catch (err) {
+        if (conn) {
+            try {
+                await conn.rollback();
+                conn.release();
+            } catch (_) { }
+        }
+
+        console.error("cancelPanicByCitizen error:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Terjadi kesalahan saat membatalkan panic",
+        });
+    }
+};
+
 
 
 module.exports = {
@@ -325,4 +442,5 @@ module.exports = {
     getPanicStatus,
     listPanicHistory,
     getPanicHistoryDetail,
+    cancelPanicByCitizen
 };

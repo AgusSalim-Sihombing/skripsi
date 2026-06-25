@@ -180,25 +180,49 @@ const db = require("../config/database");
 // Ambil semua zona bahaya
 const getAllZonaBahaya = async () => {
   const [rows] = await db.execute(
-    `SELECT 
-      zb.id_zona,
-      zb.id_laporan_sumber,
-      lc.nama_pelapor,
-      zb.nama_zona,
-      zb.deskripsi,
-      zb.latitude,
-      zb.longitude,
-      zb.radius_meter,
-      zb.warna_hex,
-      zb.tingkat_risiko,
-      zb.tanggal_kejadian,
-      zb.waktu_kejadian,
-      zb.status_zona,
-      zb.created_at
-    FROM zona_bahaya zb
-    -- Sekarang cukup JOIN ke laporan_cepat saja
-    LEFT JOIN laporan_cepat lc ON zb.id_laporan_sumber = lc.id_laporan
-    ORDER BY zb.created_at DESC`
+    // `SELECT 
+    //   zb.id_zona,
+    //   zb.id_laporan_sumber,
+    //   lc.nama_pelapor,
+    //   zb.nama_zona,
+    //   zb.deskripsi,
+    //   zb.latitude,
+    //   zb.longitude,
+    //   zb.radius_meter,
+    //   zb.warna_hex,
+    //   zb.tingkat_risiko,
+    //   zb.tanggal_kejadian,
+    //   zb.waktu_kejadian,
+    //   zb.status_zona,
+    //   zb.created_at
+    // FROM zona_bahaya zb
+    // -- Sekarang cukup JOIN ke laporan_cepat saja
+    // LEFT JOIN laporan_cepat lc ON zb.id_laporan_sumber = lc.id_laporan
+    // ORDER BY zb.created_at DESC`
+
+    `
+    SELECT 
+    zb.id_zona,
+    zb.id_laporan_sumber,
+    u.nama AS nama_pelapor,
+    zb.nama_zona,
+    zb.deskripsi,
+    zb.latitude,
+    zb.longitude,
+    zb.radius_meter,
+    zb.warna_hex,
+    zb.tingkat_risiko,
+    zb.tanggal_kejadian,
+    zb.waktu_kejadian,
+    zb.status_zona,
+    zb.created_at
+FROM zona_bahaya zb
+LEFT JOIN laporan_cepat lc 
+    ON zb.id_laporan_sumber = lc.id_laporan
+LEFT JOIN user u 
+    ON lc.id_user = u.id
+ORDER BY zb.created_at DESC;
+    `
   );
   return rows;
 };

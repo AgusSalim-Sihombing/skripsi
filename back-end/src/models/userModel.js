@@ -189,6 +189,48 @@ const getUsersAdmin = async ({ role, search, status_verifikasi }) => {
  * Update fleksibel dari sisi admin
  * hanya field yang dikirim yang di-update.
  */
+// const updateUserAdmin = async (id, data) => {
+//   const fields = [];
+//   const params = [];
+
+//   const allowed = [
+//     "nik",
+//     "nama",
+//     "alamat",
+//     "username",
+//     "phone",
+//     "tempat_lahir",
+//     "tanggal_lahir",
+//     "email",
+//     "role",
+//     "nrp",
+//     "pangkat",
+//     "satuan",
+//     "status_verifikasi",
+//     "catatan_verifikasi",
+//     "password",
+//     "status_sebelum"
+//   ];
+
+//   for (const key of allowed) {
+//     if (Object.prototype.hasOwnProperty.call(data, key)) {
+//       fields.push(`${key} = ?`);
+//       // kalau string kosong → simpan NULL
+//       const value =
+//         data[key] === "" || data[key] === undefined ? null : data[key];
+//       params.push(value);
+//     }
+//   }
+
+//   if (fields.length === 0) return;
+
+//   params.push(id);
+//   await db.execute(
+//     `UPDATE user SET ${fields.join(", ")} WHERE id = ?`,
+//     params
+//   );
+// };
+
 const updateUserAdmin = async (id, data) => {
   const fields = [];
   const params = [];
@@ -207,23 +249,29 @@ const updateUserAdmin = async (id, data) => {
     "pangkat",
     "satuan",
     "status_verifikasi",
+    "status_sebelum_takedown",
     "catatan_verifikasi",
     "password",
   ];
 
   for (const key of allowed) {
-    if (Object.prototype.hasOwnProperty.call(data, key)) {
-      fields.push(`${key} = ?`);
-      // kalau string kosong → simpan NULL
-      const value =
-        data[key] === "" || data[key] === undefined ? null : data[key];
-      params.push(value);
-    }
+    // skip total kalau key tidak dikirim
+    if (!Object.prototype.hasOwnProperty.call(data, key)) continue;
+
+    // skip kalau undefined
+    if (data[key] === undefined) continue;
+
+    fields.push(`${key} = ?`);
+
+    // string kosong boleh jadi null kalau memang sengaja dikosongkan
+    const value = data[key] === "" ? null : data[key];
+    params.push(value);
   }
 
   if (fields.length === 0) return;
 
   params.push(id);
+
   await db.execute(
     `UPDATE user SET ${fields.join(", ")} WHERE id = ?`,
     params
@@ -279,7 +327,7 @@ const resubmitKtpMe = async (id, ktpBuffer) => {
         status_verifikasi = 'pending',
         catatan_verifikasi = NULL
     WHERE id = ?
-      AND status_verifikasi = 'rejected'
+      AND status_verifikasi IN ('rejected', 'pending')
     `,
     [ktpBuffer, id]
   );
@@ -301,6 +349,86 @@ const getMyFoto = async (id) => {
 };
 
 
+const setUserTakedown = async (id, reason) => {
+  const [rows] = await db.execute(
+    `
+    SELECT id, role, status_verifikasi, status_sebelum_takedown
+    FROM user
+    WHERE id = ?
+    LIMIT 1
+    `,
+    [id]
+  );
+
+  if (!rows.length) {
+    const err = new Error("User tidak ditemukan");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const user = rows[0];
+
+  if (user.role === "admin") {
+    const err = new Error("Akun admin tidak dapat dinonaktifkan");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const previousStatus =
+    user.status_verifikasi && user.status_verifikasi !== "takedown"
+      ? user.status_verifikasi
+      : user.status_sebelum_takedown || "verified";
+
+  await db.execute(
+    `
+    UPDATE user
+    SET status_sebelum_takedown = ?,
+        status_verifikasi = 'takedown',
+        catatan_verifikasi = ?
+    WHERE id = ?
+    `,
+    [previousStatus, reason, id]
+  );
+
+  return true;
+};
+
+const restoreUserTakedown = async (id) => {
+  const [rows] = await db.execute(
+    `
+    SELECT id, status_verifikasi, status_sebelum_takedown
+    FROM user
+    WHERE id = ?
+    LIMIT 1
+    `,
+    [id]
+  );
+
+  if (!rows.length) {
+    const err = new Error("User tidak ditemukan");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const user = rows[0];
+
+  const restoredStatus = user.status_sebelum_takedown || "verified";
+
+  await db.execute(
+    `
+    UPDATE user
+    SET status_verifikasi = ?,
+        status_sebelum_takedown = NULL,
+        catatan_verifikasi = NULL
+    WHERE id = ?
+    `,
+    [restoredStatus, id]
+  );
+
+  return restoredStatus;
+};
+
+
 
 module.exports = {
   getAllUsers,
@@ -319,4 +447,7 @@ module.exports = {
   getMyKtpImage,
   updateFotoMe,
   getMyFoto,
+
+  setUserTakedown,
+  restoreUserTakedown,
 };

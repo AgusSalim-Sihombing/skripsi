@@ -75,7 +75,7 @@ const AdminLaporanCepatListPage = () => {
             <div className="laporan-cepat-page">
                 {/* HEADER */}
                 <div className="dashboard-header">
-                    <h1>Laporan Cepat</h1>
+                    <h1>Laporan Kejahatan Cepat</h1>
                     <p>
                         Daftar laporan cepat yang dikirim oleh pengguna aplikasi SIGAP.
                         Gunakan filter untuk mempermudah proses review.
@@ -180,6 +180,7 @@ const AdminLaporanCepatListPage = () => {
                             <table className="zona-table">
                                 <thead>
                                     <tr>
+                                        <th>Id Laporan</th>
                                         <th>Judul Laporan</th>
                                         <th>Tanggal</th>
                                         <th>Waktu</th>
@@ -191,6 +192,7 @@ const AdminLaporanCepatListPage = () => {
                                 <tbody>
                                     {list.map((lap) => (
                                         <tr key={lap.id_laporan}>
+                                            <td>{lap.id_laporan}</td>
                                             <td>{lap.judul_laporan}</td>
                                             <td>{lap.tanggal_kejadian}</td>
                                             <td>{lap.waktu_kejadian?.slice(0, 5)}</td>

@@ -643,6 +643,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
             ),
           ),
+          // const SizedBox(height: 100.0),
 
           if (isDark) ...[
             Positioned(
@@ -671,22 +672,26 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
 
+          
+
           Center(
+            // heightFactor: 30.0,
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
+                // crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   isDark
                       ? Image.asset('assets/logo3.png', width: 120)
                       : Image.asset('assets/logo.png', width: 120),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 50),
 
                   Container(
-                    width: 420,
+                    width: 380,
                     constraints: const BoxConstraints(maxWidth: 420),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
+                      horizontal: 30,
                       vertical: 25,
                     ),
                     decoration: BoxDecoration(
@@ -700,7 +705,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isDark
                             ? AppColors.borderLight2
@@ -808,37 +813,50 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                               borderRadius: BorderRadius.circular(30),
                             ),
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _login,
-                              style: ElevatedButton.styleFrom(
-                                // backgroundColor: cs.primary,
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
+                            child: Container(
+                              // width: 20.0,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Colors.blue, Colors.purple],
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                elevation: 0,
+                                borderRadius: BorderRadius.circular(30),
                               ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _login,
+                                style: ElevatedButton.styleFrom(
+                                  // backgroundColor: cs.primary,
+                                  // backgroundColor: Colors.transparent,
+                                  backgroundColor: isDark
+                                      ? Colors.transparent
+                                      : const Color.fromARGB(255, 10, 55, 192),
+                                  // backgroundColor: AppColors.danger,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text(
+                                        "LOGIN",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
-                                    )
-                                  : const Text(
-                                      "LOGIN",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
+                              ),
                             ),
                           ),
                         ),

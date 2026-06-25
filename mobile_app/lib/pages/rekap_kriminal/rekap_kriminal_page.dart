@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' as lat_lng;
 import 'package:mobile_app/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,6 +30,20 @@ Color _hexToColor(String? hex, {Color fallback = Colors.red}) {
 bool _isApprovedStatus(String s) {
   final v = s.toLowerCase();
   return v == "approve" || v == "approved" || v == "aktif";
+}
+
+Color _getRiskChipColor(String? riskLevel) {
+  final risk = (riskLevel ?? '').toLowerCase().trim();
+
+  if (risk == 'rendah') {
+    return Colors.blue; // biru muda
+  } else if (risk == 'sedang') {
+    return Colors.orange; // merah muda
+  } else if (risk == 'tinggi') {
+    return const Color(0xFFC62828); // merah pekat
+  }
+
+  return Colors.blueGrey;
 }
 
 class RekapKriminalPage extends StatefulWidget {
@@ -95,6 +110,7 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
 
         final riskLevel = (z['tingkat_risiko'] ?? 'sedang').toString();
         final reportSourceId = z['id_laporan_sumber']?.toString();
+        final namaPelapor = z['nama_pelapor']?.toString();
 
         // buat statusColor (badge)
         Color statusColor;
@@ -122,6 +138,7 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
           reportSourceId: reportSourceId,
           tanggalKejadian: tgl.isEmpty ? null : tgl,
           waktuKejadian: jam.isEmpty ? null : jam,
+          namaPelapor: namaPelapor,
         );
       }).toList();
 
@@ -154,10 +171,34 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
     final list = _filteredItems;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Fungsi pengekstrak Jam
+    String _extractTime(String rawDate) {
+      try {
+        List<String> parts = rawDate.split(' ');
+        if (parts.length > 1) return parts.last; // Mengambil "16:43"
+        return rawDate;
+      } catch (e) {
+        return "-";
+      }
+    }
+
+    // Fungsi pengekstrak Tanggal
+    String _extractDate(String rawDate) {
+      try {
+        String cleanDate = rawDate.split(' ')[0];
+        DateTime parsedDate = DateTime.parse(cleanDate).toLocal();
+        // Pastikan package intl sudah di-import
+        return DateFormat('dd-MM-yyyy').format(parsedDate);
+      } catch (e) {
+        return "-";
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Rekap Kriminal", style: TextStyle(fontSize: 16)),
-        backgroundColor: isDark ? AppColors.bgPrimary : const Color(0xFFF4F4F4),
+        title: const Text("Rekap Kriminal"),
+        centerTitle: true,
+        // backgroundColor: isDark ? AppColors.bgPrimary : const Color(0xFFF4F4F4),
       ),
       body: Column(
         children: [
@@ -241,7 +282,7 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.borderSoft,
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
@@ -257,8 +298,8 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: SizedBox(
-                                    width: 84,
-                                    height: 84,
+                                    width: 130,
+                                    height: 130,
                                     child: _ZonaFotoThumb(idZona: it.id),
                                   ),
                                 ),
@@ -286,36 +327,90 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
                                             text: approved
                                                 ? "APPROVED"
                                                 : "PENDING",
-                                            bg: approved
+                                            textColor: approved
                                                 ? Colors.green
                                                 : Colors.orange,
                                           ),
                                           _MiniChip(
                                             text: "Risiko: ${it.riskLevel}",
-                                            bg: Colors.blueGrey,
-                                          ),
-                                          _MiniChip(
-                                            text:
-                                                "Radius: ${it.radiusMeter.toStringAsFixed(0)}m",
-                                            bg: Colors.black87,
+                                            textColor: _getRiskChipColor(
+                                              it.riskLevel,
+                                            ),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        it.time.isEmpty ? "-" : it.time,
+                                        "Radius: ${it.radiusMeter.toStringAsFixed(0)}m",
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey.shade700,
                                         ),
                                       ),
+                                      // Text(
+                                      //   it.time.isEmpty ? "-" : it.time,
+                                      //   style: TextStyle(
+                                      //     fontSize: 12,
+                                      //     color: Colors.grey.shade700,
+                                      //   ),
+                                      // ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "Waktu : ${_extractTime(it.time)}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          Text(
+                                            "/${_extractDate(it.time)}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+
+                                          // const SizedBox(width: 12),
+                                        ],
+                                      ),
                                       const SizedBox(height: 4),
+                                      // Text(
+                                      //   "${it.position.latitude.toStringAsFixed(5)}, "
+                                      //   "${it.position.longitude.toStringAsFixed(5)}",
+                                      //   style: TextStyle(
+                                      //     fontSize: 12,
+                                      //     color: Colors.grey.shade600,
+                                      //   ),
+                                      // ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "Lat: ${it.position.latitude.toStringAsFixed(5)}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            "Lon: ${it.position.longitude.toStringAsFixed(5)}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                       Text(
-                                        "${it.position.latitude.toStringAsFixed(5)}, "
-                                        "${it.position.longitude.toStringAsFixed(5)}",
+                                        it.namaPelapor != null
+                                            ? "Pelapor: ${it.namaPelapor}"
+                                            : "Pelapor: -",
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey.shade600,
+                                          color: Colors.grey.shade800,
                                         ),
                                       ),
                                     ],
@@ -355,7 +450,9 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF8B5A24) : Colors.grey.shade200,
+          color: active
+              ? const Color.fromARGB(255, 23, 16, 225)
+              : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
@@ -373,22 +470,23 @@ class _FilterChip extends StatelessWidget {
 
 class _MiniChip extends StatelessWidget {
   final String text;
-  final Color bg;
+  final Color? bg;
+  final Color? textColor;
 
-  const _MiniChip({required this.text, required this.bg});
+  const _MiniChip({required this.text, this.bg, this.textColor});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      // padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: textColor,
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
@@ -470,7 +568,17 @@ class _ZonaFotoThumbState extends State<_ZonaFotoThumb> {
     if (_bytes == null) {
       return Container(
         color: Colors.grey.shade200,
-        child: Icon(Icons.image_not_supported, color: Colors.grey.shade600),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_not_supported, color: Colors.grey.shade600),
+            const SizedBox(height: 4),
+            Text(
+              "Tidak ada foto",
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            ),
+          ],
+        ),
       );
     }
 

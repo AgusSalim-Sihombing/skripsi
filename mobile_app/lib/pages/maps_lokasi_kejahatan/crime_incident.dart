@@ -6,7 +6,8 @@ class CrimeIncident {
   final String id;
   final String title;
   final String status;
-  final String time;
+  final String? namaPelapor;
+  final String time; 
   final String description;
   final Color statusColor;
   final lat_lng.LatLng position;
@@ -17,7 +18,7 @@ class CrimeIncident {
   final String? reportSourceId;
   final String? tanggalKejadian;
   final String? waktuKejadian;
-  final String? namaPelapor;
+  
 
   CrimeIncident({
     required this.id,

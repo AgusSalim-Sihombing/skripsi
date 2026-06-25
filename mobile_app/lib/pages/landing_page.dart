@@ -7,8 +7,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_app/config/api_config.dart';
 import 'package:mobile_app/pages/community/community_lobby_page.dart';
-import 'package:mobile_app/pages/lapor_cepat.dart/daftar_laporan_cepat.dart';
-import 'package:mobile_app/pages/lapor_cepat.dart/laporan_cepat.dart';
+import 'package:mobile_app/pages/lapor_cepat/daftar_laporan_cepat.dart';
+import 'package:mobile_app/pages/lapor_cepat/laporan_cepat.dart';
 import 'package:mobile_app/pages/laporan_kepolisian/buat_laporan_kepolisian_page.dart';
 import 'package:mobile_app/pages/laporan_kepolisian/daftar_laporan_kepolisian_page.dart';
 import 'package:mobile_app/pages/login_page.dart';
@@ -620,7 +620,7 @@ class _LandingPageState extends State<LandingPage> {
                   gradient: isDark
                       ? AppGradients.loginButton
                       : const LinearGradient(
-                          colors: [Color(0xFF8B5A24), Color(0xFFAA7740)],
+                          colors: [Color.fromARGB(255, 19, 54, 209), Color.fromARGB(255, 74, 134, 255)],
                         ),
                 ),
                 child: Column(

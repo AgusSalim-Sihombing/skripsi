@@ -51,20 +51,31 @@ exports.resubmitKtp = async (req, res) => {
     try {
         const userId = req.user.id;
         const buf = req.file?.buffer;
-        if (!buf) return res.status(400).json({ message: "ktp_image wajib diupload" });
+
+        if (!buf) {
+            return res.status(400).json({ message: "ktp_image wajib diupload" });
+        }
 
         const affected = await userModel.resubmitKtpMe(userId, buf);
 
+        // Hanya error jika affected === 0 (berarti tidak ada row yang ter-update, 
+        // kemungkinan karena statusnya sudah 'verified')
         if (affected === 0) {
             return res.status(403).json({
-                message: "Tidak bisa upload ulang KTP. Pastikan status_verifikasi = rejected.",
+                message: "Tidak bisa upload ulang KTP. Pastikan status verifikasi kamu 'rejected' atau 'pending'.",
             });
         }
 
         const updated = await userModel.getUserMe(userId);
-        return res.json({ message: "KTP berhasil dikirim ulang (status: pending)", data: updated });
+        return res.json({
+            message: "KTP berhasil dikirim ulang (status: pending)",
+            data: updated
+        });
     } catch (e) {
-        return res.status(500).json({ message: "Gagal kirim ulang KTP", error: e.message });
+        return res.status(500).json({
+            message: "Gagal kirim ulang KTP",
+            error: e.message
+        });
     }
 };
 

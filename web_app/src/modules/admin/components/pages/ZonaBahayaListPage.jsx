@@ -9,7 +9,7 @@ const ZonaBahayaListPage = () => {
     const [errorMsg, setErrorMsg] = useState("");
 
     const [search, setSearch] = useState("");
-    const [risiko, setRisiko] = useState("semua");
+    const [status, setStatus] = useState("semua");
 
     const navigate = useNavigate();
 
@@ -41,12 +41,14 @@ const ZonaBahayaListPage = () => {
                 !search ||
                 z.nama_zona?.toLowerCase().includes(search.toLowerCase());
 
-            const matchRisiko =
-                risiko === "semua" || z.tingkat_risiko === risiko;
+            const zonaStatus = (z.status_zona || "").toLowerCase();
 
-            return matchNama && matchRisiko;
+            const matchStatus =
+                status === "semua" || zonaStatus === status.toLowerCase();
+
+            return matchNama && matchStatus;
         });
-    }, [zones, search, risiko]);
+    }, [zones, search, status]);
 
     const formatTanggal = (tgl) => {
         if (!tgl) return "-";
@@ -55,6 +57,20 @@ const ZonaBahayaListPage = () => {
         } catch {
             return tgl;
         }
+    };
+
+    const formatStatus = (statusZona) => {
+        if (!statusZona) return "-";
+
+        const s = statusZona.toLowerCase();
+
+        if (s === "pending") return "Pending";
+        if (s === "approved" || s === "approve") return "Approved";
+        if (s === "rejected" || s === "reject") return "Rejected";
+        if (s === "aktif") return "Aktif";
+        if (s === "nonaktif") return "Nonaktif";
+
+        return statusZona;
     };
 
     return (
@@ -82,15 +98,19 @@ const ZonaBahayaListPage = () => {
                     </div>
 
                     <div className="form-group">
-                        <label>Filter Risiko</label>
+                        <label>Filter Status</label>
                         <select
-                            value={risiko}
-                            onChange={(e) => setRisiko(e.target.value)}
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
                         >
                             <option value="semua">Semua</option>
-                            <option value="rendah">Rendah</option>
-                            <option value="sedang">Sedang</option>
-                            <option value="tinggi">Tinggi</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="approve">Approve</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="reject">Reject</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="nonaktif">Nonaktif</option>
                         </select>
                     </div>
                 </div>
@@ -111,7 +131,6 @@ const ZonaBahayaListPage = () => {
                             <thead>
                                 <tr>
                                     <th>Nama Zona</th>
-                                    <th>Risiko</th>
                                     <th>Status</th>
                                     <th>Radius (m)</th>
                                     <th>Koordinat</th>
@@ -124,8 +143,7 @@ const ZonaBahayaListPage = () => {
                                 {filteredZones.map((z) => (
                                     <tr key={z.id_zona}>
                                         <td>{z.nama_zona}</td>
-                                        <td>{z.tingkat_risiko}</td>
-                                        <td>{z.status || "-"}</td>
+                                        <td>{formatStatus(z.status_zona)}</td>
                                         <td>{z.radius_meter}</td>
                                         <td>
                                             {Number(z.latitude).toFixed(5)},{" "}
@@ -151,7 +169,9 @@ const ZonaBahayaListPage = () => {
                                         <td>
                                             <button
                                                 type="button"
-                                                onClick={() => navigate(`/admin/zona-bahaya/semua/${z.id_zona}`)}
+                                                onClick={() =>
+                                                    navigate(`/admin/zona-bahaya/semua/${z.id_zona}`)
+                                                }
                                                 style={{
                                                     border: "none",
                                                     backgroundColor: "#2563eb",

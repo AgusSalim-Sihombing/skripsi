@@ -9,12 +9,13 @@ import 'package:mobile_app/pages/officer/panic_detail_page.dart';
 import 'package:mobile_app/pages/officer/panic_dispatch_page.dart';
 import 'package:mobile_app/pages/profile_page.dart';
 import 'package:mobile_app/services/socket_service.dart';
+import 'package:mobile_app/theme/app_theme.dart';
+import 'package:mobile_app/theme/theme_controller.dart';
 import 'package:mobile_app/widgets/panic_banner.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobile_app/pages/officer/field_report_inbox_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/pages/officer/panic_history_page.dart';
-
 
 class OfficerHomePage extends StatefulWidget {
   final String username;
@@ -228,16 +229,16 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
         icon: Icons.person_outline,
         onTap: () {
           Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ProfilePage(),
-                            ),
-                          );
+            context,
+            MaterialPageRoute(builder: (_) => const ProfilePage()),
+          );
         },
       ),
     ];
 
     final pageController = PageController(viewportFraction: 0.9);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -246,7 +247,25 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: const BoxDecoration(color: Color(0xFF8B5A24)),
+              decoration: BoxDecoration(
+                gradient: isDark
+                    ? const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.surfaceGlass,
+                          AppColors.surfaceGlass2,
+                        ],
+                      )
+                    : const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color.fromARGB(255, 127, 146, 240),
+                          Color.fromARGB(255, 15, 0, 228),
+                        ],
+                      ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -327,7 +346,30 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
             ),
 
             const Divider(),
+            ValueListenableBuilder<ThemeMode>(
+              valueListenable: ThemeController.themeMode,
+              builder: (context, mode, _) {
+                final darkSelected = mode == ThemeMode.dark;
 
+                return SwitchListTile.adaptive(
+                  value: darkSelected,
+                  onChanged: (value) async {
+                    await ThemeController.setThemeMode(
+                      value ? ThemeMode.dark : ThemeMode.light,
+                    );
+                  },
+                  secondary: Icon(
+                    darkSelected
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
+                    color: darkSelected
+                        ? AppColors.accentLight
+                        : AppColors.primaryBlue,
+                  ),
+                  title: Text(darkSelected ? "Mode Gelap" : "Mode Terang"),
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text("Keluar", style: TextStyle(color: Colors.red)),
@@ -515,7 +557,7 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
                           data: data,
                           isTaking: isTaking,
 
-                          // ✅ FIX UTAMA: tombol RESPON cuma buka detail, gak hit API respond
+                          //tombol RESPON cuma buka detail, gak hit API respond
                           onRespond: () async {
                             if (isTaking) return;
 
@@ -667,7 +709,11 @@ class _OfficerFeatureCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(item.icon, color: const Color(0xFF8B5A24), size: 30),
+            Icon(
+              item.icon,
+              color: const Color.fromARGB(255, 0, 0, 0),
+              size: 30,
+            ),
             const SizedBox(height: 8),
             Text(
               item.title,
@@ -718,5 +764,3 @@ class OfficerFieldReportPage extends StatelessWidget {
     );
   }
 }
-
-

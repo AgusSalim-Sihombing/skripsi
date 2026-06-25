@@ -183,14 +183,14 @@ class MessagePopup {
   }
 
   static Future<void> error(BuildContext context, String message) async {
-    await show(context, message, type: AppPopupType.error);
+    await show(context, message, type: AppPopupType.error, duration: const Duration(seconds: 4));
   }
 
   static Future<void> info(BuildContext context, String message) async {
-    await show(context, message, type: AppPopupType.info);
+    await show(context, message, type: AppPopupType.info, duration: const Duration(seconds: 4));
   }
 
   static Future<void> warning(BuildContext context, String message) async {
-    await show(context, message, type: AppPopupType.warning);
+    await show(context, message, type: AppPopupType.warning, duration: const Duration(seconds: 4));
   }
 }

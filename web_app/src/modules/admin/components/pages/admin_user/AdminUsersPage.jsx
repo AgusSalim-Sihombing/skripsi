@@ -325,7 +325,7 @@ const AdminUsersPage = ({ title = "Data Pengguna", defaultRole = "" }) => {
                                                 >
                                                     Detail & Verifikasi
                                                 </button>
-                                                <button
+                                                {/* <button
                                                     type="button"
                                                     className="btn btn-secondary btn-user-delete"
                                                     style={{
@@ -336,7 +336,7 @@ const AdminUsersPage = ({ title = "Data Pengguna", defaultRole = "" }) => {
                                                     onClick={() => handleDelete(u)}
                                                 >
                                                     Hapus
-                                                </button>
+                                                </button> */}
                                             </td>
                                         </tr>
                                     ))}

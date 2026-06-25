@@ -109,9 +109,18 @@ const AdminPanicAlertListPage = () => {
                                                         </div>
                                                     ) : (
                                                         /* Jika statusnya OPEN dan belum ada petugas, gunakan class blink */
-                                                        <span className={r.status === "OPEN" ? "panic-unassigned-blink" : "panic-unassigned"}>
-                                                            ⚠️ Menunggu Petugas...
-                                                        </span>
+                                                        // <span className={r.status === "OPEN" ? "panic-unassigned-blink" : "panic-unassigned"}>
+                                                        //     ⚠️ Menunggu Petugas...
+                                                        // </span>
+
+                                                        r.status === "OPEN" ? (
+                                                            <span className="panic-unassigned-blink">
+                                                                ⚠️ Menunggu Petugas...
+                                                            </span>) :
+                                                            (<span className="panic-unassigned">
+                                                                ⚠️ Tidak Ada Petugas...
+                                                            </span>)
+
                                                     )}
                                                 </td>
                                                 <td>

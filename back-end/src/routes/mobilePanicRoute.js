@@ -40,4 +40,6 @@ router.get(
     panicController.getPanicHistoryDetail
 );
 
+router.patch("/panic/:id/cancel", authUser, panicController.cancelPanicByCitizen);
+
 module.exports = router;
