@@ -760,7 +760,7 @@ const HomePublicPage = () => {
 
                         <div className="contact-clean-links">
                             <a href="#!" target="_blank" rel="noreferrer">
-                                Dokumentasi Teknis SIGAP
+                                Dokumentasi Teknis SIGAP mobile
                             </a>
                             <a href="#!" target="_blank" rel="noreferrer">
                                 FAQ Penggunaan
