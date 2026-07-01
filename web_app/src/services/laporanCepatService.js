@@ -76,7 +76,11 @@ const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL;
 
 const getAuthHeader = () => {
     const token = localStorage.getItem("sigap_admin_token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    // return token ? { Authorization: `Bearer ${token}` } : {};
+    return {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        "ngrok-skip-browser-warning": "true",
+    };
 };
 
 // LIST laporan untuk tabel admin

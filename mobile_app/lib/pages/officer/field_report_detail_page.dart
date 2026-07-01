@@ -49,6 +49,39 @@ class _OfficerFieldReportDetailPageState
     }
   }
 
+  String _formatTanggal(dynamic value) {
+    if (value == null) return '-';
+
+    final text = value.toString().trim();
+    if (text.isEmpty) return '-';
+
+    try {
+      // Ambil pola tanggal dari format:
+      // 2026-06-29
+      // 2026-06-29 19:32:56
+      // 2026-06-29T12:32:56.000Z
+      final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(text);
+
+      if (match != null) {
+        final year = match.group(1)!;
+        final month = match.group(2)!;
+        final day = match.group(3)!;
+
+        return '$day-$month-$year';
+      }
+
+      final d = DateTime.parse(text).toLocal();
+
+      final day = d.day.toString().padLeft(2, '0');
+      final month = d.month.toString().padLeft(2, '0');
+      final year = d.year.toString();
+
+      return '$day-$month-$year';
+    } catch (_) {
+      return text;
+    }
+  }
+
   // Format Key-Value yang lebih rapi
   Widget _kv(String label, dynamic value) {
     return Padding(
@@ -98,7 +131,11 @@ class _OfficerFieldReportDetailPageState
           children: [
             Row(
               children: [
-                Icon(icon, size: 20, color: const Color(0xFF1E3A8A)), // Biru Navy
+                Icon(
+                  icon,
+                  size: 20,
+                  color: const Color(0xFF1E3A8A),
+                ), // Biru Navy
                 const SizedBox(width: 8),
                 Text(
                   title,
@@ -173,7 +210,8 @@ class _OfficerFieldReportDetailPageState
     final statusProps = _statusProps(statusStr);
     final assignedOfficer = d?['assigned_officer_user_id'];
 
-    final isMine = (_myId != null &&
+    final isMine =
+        (_myId != null &&
         assignedOfficer != null &&
         assignedOfficer.toString() == _myId.toString());
 
@@ -199,219 +237,238 @@ class _OfficerFieldReportDetailPageState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : d == null
-              ? const Center(child: Text("Data tidak ditemukan."))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // --- HEADER INFO (Status & Judul) ---
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.black12),
-                        ),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+          ? const Center(child: Text("Data tidak ditemukan."))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // --- HEADER INFO (Status & Judul) ---
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.black12),
+                    ),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    widget.reportTitle,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: statusProps['color'].withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    statusProps['text'],
-                                    style: TextStyle(
-                                      color: statusProps['color'],
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            _kv("Dibuat Pada", d['created_at']),
-                            _kv("Update Terakhir", d['updated_at']),
-                            _kv("Petugas Menangani", assignedOfficer ?? "Belum ada"),
-                            if (_s(d['catatan_admin']) != '-')
-                              _kv("Catatan Admin", d['catatan_admin']),
-                          ],
-                        ),
-                      ),
-
-                      // --- SECTIONS ---
-                      _section("Waktu & Tempat Kejadian", Icons.location_on, [
-                        _kv("Hari, Tanggal", "${_s(d['waktu_kejadian_hari'])}, ${_s(d['waktu_kejadian_tanggal'])}"),
-                        _kv("Jam", d['waktu_kejadian_jam']),
-                        const SizedBox(height: 8),
-                        _kv("Jalan", d['tempat_jalan']),
-                        _kv("Desa/Kelurahan", d['tempat_desa_kel']),
-                        _kv("Kecamatan", d['tempat_kecamatan']),
-                        _kv("Kabupaten/Kota", d['tempat_kab_kota']),
-                      ]),
-
-                      _section("Detail Peristiwa", Icons.warning_amber_rounded, [
-                        _kv("Tindak Pidana", d['tindak_pidana']),
-                        _kv("Apa yang terjadi", d['apa_terjadi']),
-                        _kv("Bagaimana terjadi", d['bagaimana_terjadi']),
-                        _kv("Barang Bukti", d['barang_bukti']),
-                        _kv("Uraian Singkat", d['uraian_singkat']),
-                        _kv("Tindakan", d['tindakan_dilakukan']),
-                      ]),
-
-                      _section("Data Terlapor", Icons.person_off, [
-                        _kv("Nama", d['terlapor_nama']),
-                        _kv("Jenis Kelamin", d['terlapor_jk']),
-                        _kv("Pekerjaan", d['terlapor_pekerjaan']),
-                        _kv("Kontak", d['terlapor_kontak']),
-                        _kv("Alamat", d['terlapor_alamat']),
-                      ]),
-
-                      _section("Data Korban", Icons.person, [
-                        _kv("Nama", d['korban_nama']),
-                        _kv("Jenis Kelamin", d['korban_jk']),
-                        _kv("Pekerjaan", d['korban_pekerjaan']),
-                        _kv("Kontak", d['korban_kontak']),
-                        _kv("Alamat", d['korban_alamat']),
-                      ]),
-
-                      _section("Data Saksi 1", Icons.group, [
-                        _kv("Nama", d['saksi1_nama']),
-                        _kv("Umur", d['saksi1_umur']),
-                        _kv("Pekerjaan", d['saksi1_pekerjaan']),
-                        _kv("Alamat", d['saksi1_alamat']),
-                      ]),
-
-                      if (_s(d['saksi2_nama']) != '-')
-                        _section("Data Saksi 2", Icons.group, [
-                          _kv("Nama", d['saksi2_nama']),
-                          _kv("Umur", d['saksi2_umur']),
-                          _kv("Pekerjaan", d['saksi2_pekerjaan']),
-                          _kv("Alamat", d['saksi2_alamat']),
-                        ]),
-
-                      _section("Mengetahui & Petugas", Icons.local_police, [
-                        _kv("Jabatan Kepala", d['mengetahui_kepala_jabatan']),
-                        _kv("Nama Kepala", d['mengetahui_kepala_nama']),
-                        _kv("Pangkat/NRP", d['mengetahui_kepala_pangkat_nrp']),
-                        const Divider(height: 20),
-                        _kv("Nama Pelapor (Petugas)", d['pelapor_nama']),
-                        _kv("Pangkat/NRP Pelapor", d['pelapor_pangkat_nrp']),
-                        _kv("Kesatuan", d['pelapor_kesatuan']),
-                        _kv("Kontak Pelapor", d['pelapor_kontak']),
-                      ]),
-
-                      const SizedBox(height: 16),
-
-                      // --- ACTION BUTTONS ---
-                      if (canRespond)
-                        ElevatedButton.icon(
-                          onPressed: _acting ? null : _respond,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[700],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
-                          ),
-                          icon: const Icon(Icons.handshake),
-                          label: _acting
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  "AMBIL & PROSES LAPORAN",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                        ),
-
-                      if (!canRespond && statusStr == 'pending' && assignedOfficer != null)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.warning_amber_rounded, color: Colors.red),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  "Laporan ini sudah diambil oleh petugas lain.",
-                                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                            Expanded(
+                              child: Text(
+                                widget.reportTitle,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                      if (canComplete)
-                        ElevatedButton.icon(
-                          onPressed: _acting ? null : _complete,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[700],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
                             ),
-                            elevation: 2,
-                          ),
-                          icon: const Icon(Icons.check_circle),
-                          label: _acting
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  "TANDAI SELESAI",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    letterSpacing: 0.5,
-                                  ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusProps['color'].withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                statusProps['text'],
+                                style: TextStyle(
+                                  color: statusProps['color'],
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12,
                                 ),
+                              ),
+                            ),
+                          ],
                         ),
-                        
-                      const SizedBox(height: 40), // Padding bawah tambahan
-                    ],
+                        const SizedBox(height: 12),
+                        _kv("Dibuat Pada", _formatTanggal(d['created_at'])),
+                        _kv("Update Terakhir", _formatTanggal(d['updated_at'])),
+                        _kv(
+                          "Petugas Menangani",
+                          assignedOfficer ?? "Belum ada",
+                        ),
+                        if (_s(d['catatan_admin']) != '-')
+                          _kv("Catatan Admin", d['catatan_admin']),
+                      ],
+                    ),
                   ),
-                ),
+
+                  // --- SECTIONS ---
+                  _section("Waktu & Tempat Kejadian", Icons.location_on, [
+                    _kv(
+                      "Hari, Tanggal",
+                      "${_s(d['waktu_kejadian_hari'])}, ${_formatTanggal(d['waktu_kejadian_tanggal'])}",
+                    ),
+                    _kv("Jam", d['waktu_kejadian_jam']),
+                    const SizedBox(height: 8),
+                    _kv("Jalan", d['tempat_jalan']),
+                    _kv("Desa/Kelurahan", d['tempat_desa_kel']),
+                    _kv("Kecamatan", d['tempat_kecamatan']),
+                    _kv("Kabupaten/Kota", d['tempat_kab_kota']),
+                  ]),
+
+                  _section("Detail Peristiwa", Icons.warning_amber_rounded, [
+                    _kv("Tindak Pidana", d['tindak_pidana']),
+                    _kv("Apa yang terjadi", d['apa_terjadi']),
+                    _kv("Bagaimana terjadi", d['bagaimana_terjadi']),
+                    _kv("Barang Bukti", d['barang_bukti']),
+                    _kv("Uraian Singkat", d['uraian_singkat']),
+                    _kv("Tindakan", d['tindakan_dilakukan']),
+                  ]),
+
+                  _section("Data Terlapor", Icons.person_off, [
+                    _kv("Nama", d['terlapor_nama']),
+                    _kv("Jenis Kelamin", d['terlapor_jk']),
+                    _kv("Pekerjaan", d['terlapor_pekerjaan']),
+                    _kv("Kontak", d['terlapor_kontak']),
+                    _kv("Alamat", d['terlapor_alamat']),
+                  ]),
+
+                  _section("Data Korban", Icons.person, [
+                    _kv("Nama", d['korban_nama']),
+                    _kv("Jenis Kelamin", d['korban_jk']),
+                    _kv("Pekerjaan", d['korban_pekerjaan']),
+                    _kv("Kontak", d['korban_kontak']),
+                    _kv("Alamat", d['korban_alamat']),
+                  ]),
+
+                  _section("Dilaporkan Pada", Icons.date_range, [
+                    _kv("Hari", d['dilaporkan_hari']),
+                    _kv("Tanggal", _formatTanggal(d['dilaporkan_tanggal'])),
+                    _kv("Jam", d['dilaporkan_jam']),
+                  ]),
+
+                  _section("Data Saksi 1", Icons.group, [
+                    _kv("Nama", d['saksi1_nama']),
+                    _kv("Umur", d['saksi1_umur']),
+                    _kv("Pekerjaan", d['saksi1_pekerjaan']),
+                    _kv("Alamat", d['saksi1_alamat']),
+                  ]),
+
+                  if (_s(d['saksi2_nama']) != '-')
+                    _section("Data Saksi 2", Icons.group, [
+                      _kv("Nama", d['saksi2_nama']),
+                      _kv("Umur", d['saksi2_umur']),
+                      _kv("Pekerjaan", d['saksi2_pekerjaan']),
+                      _kv("Alamat", d['saksi2_alamat']),
+                    ]),
+
+                  _section("Mengetahui & Petugas", Icons.local_police, [
+                    _kv("Jabatan Kepala", d['mengetahui_kepala_jabatan']),
+                    _kv("Nama Kepala", d['mengetahui_kepala_nama']),
+                    _kv("Pangkat/NRP", d['mengetahui_kepala_pangkat_nrp']),
+                    const Divider(height: 20),
+                    _kv("Nama Pelapor (Petugas)", d['pelapor_nama']),
+                    _kv("Pangkat/NRP Pelapor", d['pelapor_pangkat_nrp']),
+                    _kv("Kesatuan", d['pelapor_kesatuan']),
+                    _kv("Kontak Pelapor", d['pelapor_kontak']),
+                  ]),
+
+                  const SizedBox(height: 16),
+
+                  // --- ACTION BUTTONS ---
+                  if (canRespond)
+                    ElevatedButton.icon(
+                      onPressed: _acting ? null : _respond,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      icon: const Icon(Icons.handshake),
+                      label: _acting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              "AMBIL & PROSES LAPORAN",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                    ),
+
+                  if (!canRespond &&
+                      statusStr == 'pending' &&
+                      assignedOfficer != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.red),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "Laporan ini sudah diambil oleh petugas lain.",
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  if (canComplete)
+                    ElevatedButton.icon(
+                      onPressed: _acting ? null : _complete,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      icon: const Icon(Icons.check_circle),
+                      label: _acting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              "TANDAI SELESAI",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                    ),
+
+                  const SizedBox(height: 40), // Padding bawah tambahan
+                ],
+              ),
+            ),
     );
   }
 }

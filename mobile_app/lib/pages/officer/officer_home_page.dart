@@ -16,6 +16,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:mobile_app/pages/officer/field_report_inbox_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/pages/officer/panic_history_page.dart';
+import 'package:mobile_app/pages/officer/panic_open_dispatch_page.dart';
 
 class OfficerHomePage extends StatefulWidget {
   final String username;
@@ -50,6 +51,7 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
 
     _socket.on("socket:ready", (data) {
       debugPrint("✅ socket ready: $data");
+      _loadOfferedPanics();
     });
 
     _socket.on("panic:new", (payload) {
@@ -72,6 +74,8 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
         _panicNotifs.removeWhere((e) => e["panicId"] == panicId);
       });
     });
+
+    Future.delayed(const Duration(milliseconds: 800), _loadOfferedPanics);
   }
 
   Future<void> _sendOfficerLocationOnce() async {
@@ -95,6 +99,7 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
+          "ngrok-skip-browser-warning": "true",
         },
         body: jsonEncode({
           "lat": pos.latitude,
@@ -106,6 +111,47 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
       debugPrint("📍 officer location update: ${resp.statusCode}");
     } catch (e) {
       debugPrint("❌ _sendOfficerLocationOnce error: $e");
+    }
+  }
+
+  Future<void> _loadOfferedPanics() async {
+    try {
+      final resp = await http.get(
+        Uri.parse("${widget.baseUrl}/api/mobile/officer/panic/offered"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.token}",
+          "ngrok-skip-browser-warning": "true",
+        },
+      );
+
+      if (resp.statusCode != 200) {
+        debugPrint("❌ load offered failed: ${resp.statusCode} ${resp.body}");
+        return;
+      }
+
+      final List list = jsonDecode(resp.body);
+
+      if (!mounted) return;
+
+      setState(() {
+        for (final item in list) {
+          final data = Map<String, dynamic>.from(item);
+
+          // tampilkan hanya panic yang masih OPEN
+          if ((data["status"] ?? "").toString() != "OPEN") continue;
+
+          final exists = _panicNotifs.any(
+            (e) => e["panicId"].toString() == data["panicId"].toString(),
+          );
+
+          if (!exists) {
+            _panicNotifs.add(data);
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint("❌ _loadOfferedPanics error: $e");
     }
   }
 
@@ -505,7 +551,7 @@ class _OfficerHomePageState extends State<OfficerHomePage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => PanicDispatchPage(
+                                  builder: (_) => PanicOpenDispatchPage(
                                     token: widget.token,
                                     baseUrl: widget.baseUrl,
                                   ),

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../../../shared/layout/AdminLayout";
 import "./AdminLaporanCepatDetail.css";
+import axios from "axios";
 import {
     getAdminLaporanDetail,
     approveLaporan,
@@ -22,7 +23,7 @@ const AdminLaporanCepatDetailPage = () => {
     const { id } = useParams();
 
     const navigate = useNavigate();
-
+    const [fotoPreviewUrl, setFotoPreviewUrl] = useState("");
     const [laporan, setLaporan] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -51,6 +52,7 @@ const AdminLaporanCepatDetailPage = () => {
     };
 
     const fotoUrl = `${API_BASE_URL}/admin/laporan-cepat/${id}/foto`;
+    const fotoLocal = "../../../../assets/no-image.png";
 
     const statusStyles = {
         pending: { backgroundColor: "#f69300f6", color: "white" },  // Merah
@@ -75,6 +77,33 @@ const AdminLaporanCepatDetailPage = () => {
         }
     };
 
+
+    const FALLBACK_IMAGE =
+        "https://dummyimage.com/500x300/e5e7eb/6b7280.png&text=Foto+Tidak+Tersedia";
+
+    const loadFoto = async () => {
+        const token = localStorage.getItem("sigap_admin_token");
+
+        try {
+            const res = await axios.get(
+                `${API_BASE_URL}/admin/laporan-cepat/${id}/foto`,
+                {
+                    responseType: "blob",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "ngrok-skip-browser-warning": "true",
+                    },
+                }
+            );
+
+            const objectUrl = URL.createObjectURL(res.data);
+            setFotoPreviewUrl(objectUrl);
+        } catch (err) {
+            console.error("Gagal load foto laporan:", err);
+            setFotoPreviewUrl(FALLBACK_IMAGE);
+        }
+    };
+
     useEffect(() => {
         const token = localStorage.getItem("sigap_admin_token");
         if (!token) {
@@ -82,6 +111,7 @@ const AdminLaporanCepatDetailPage = () => {
             return;
         }
         loadDetail();
+        loadFoto();
     }, [id]);
 
     const toggleModal = () => setIsModalOpen(!isModalOpen);
@@ -130,13 +160,73 @@ const AdminLaporanCepatDetailPage = () => {
             );
         }
     };
+    const formatTanggal = (value) => {
+        if (!value) return "-";
+
+        const text = String(value).trim();
+        if (!text) return "-";
+
+        // Format database: 2026-06-29 atau 2026-06-29 19:32:56
+        const dbMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (dbMatch && !text.includes("T")) {
+            const [, year, month, day] = dbMatch;
+            return `${day}-${month}-${year}`;
+        }
+
+        // Format ISO dari backend: 2026-06-29T12:32:56.000Z
+        const date = new Date(text);
+        if (!Number.isNaN(date.getTime())) {
+            return new Intl.DateTimeFormat("id-ID", {
+                timeZone: "Asia/Jakarta",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            })
+                .format(date)
+                .replaceAll("/", "-");
+        }
+
+        return text;
+    };
+
+    const formatWaktu = (value) => {
+        if (!value) return "-";
+
+        const text = String(value).trim();
+        if (!text) return "-";
+
+        // Format database: 2026-06-29 19:32:56
+        const dbDateTimeMatch = text.match(/^\d{4}-\d{2}-\d{2}\s+(\d{2}):(\d{2})/);
+        if (dbDateTimeMatch) {
+            return `${dbDateTimeMatch[1]}:${dbDateTimeMatch[2]}`;
+        }
+
+        // Format time saja: 19:32:56
+        const timeMatch = text.match(/^(\d{2}):(\d{2})/);
+        if (timeMatch) {
+            return `${timeMatch[1]}:${timeMatch[2]}`;
+        }
+
+        // Format ISO dari backend: 2026-06-29T12:32:56.000Z
+        const date = new Date(text);
+        if (!Number.isNaN(date.getTime())) {
+            return new Intl.DateTimeFormat("id-ID", {
+                timeZone: "Asia/Jakarta",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+            }).format(date);
+        }
+
+        return text;
+    };
 
     return (
         <AdminLayout>
             <div className="laporan-container">
                 <header className="page-header">
                     <div className="header-text">
-                        <h2>Detail Laporan Cepat</h2>
+                        <h2>Detail Laporan Kejahatan Cepat</h2>
                         <p>Validasi informasi laporan dan kelola status kejadian di bawah ini.</p>
                     </div>
 
@@ -170,7 +260,7 @@ const AdminLaporanCepatDetailPage = () => {
                                         </tr>
                                         <tr style={{ background: "white" }}>
                                             <th>Waktu Kejadian</th>
-                                            <td>{laporan.tanggal_kejadian} | {laporan.waktu_kejadian?.slice(0, 5)}</td>
+                                            <td>{formatTanggal(laporan.tanggal_kejadian)} | {formatWaktu(laporan.waktu_kejadian)?.slice(0, 5)}</td>
                                         </tr>
                                         <tr>
                                             <th>Lokasi (Lat, Long)</th>
@@ -219,11 +309,13 @@ const AdminLaporanCepatDetailPage = () => {
                                 <h3>Foto Lampiran</h3>
                                 <div className="image-preview-container" onClick={toggleModal}>
                                     <img
-                                        src={fotoUrl}
+                                        src={fotoPreviewUrl || FALLBACK_IMAGE}
                                         alt="Klik untuk memperbesar"
                                         className="img-preview"
-                                        // height={"80px"}
-                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/500x300?text=Foto+Tidak+Tersedia'; }}
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = FALLBACK_IMAGE;
+                                        }}
                                     />
                                     <div className="image-overlay">
                                         <span>Klik untuk memperbesar</span>
@@ -232,6 +324,31 @@ const AdminLaporanCepatDetailPage = () => {
                                 <p>Note : Klik untuk memperbesar gambar</p>
                             </div>
                         </div>
+
+                        {/* SISI KANAN: MEDIA/FOTO */}
+                        {/* <div className="media-section">
+                            <div className="card" style={{ height: "100%" }}>
+                                <h3>Foto Lampiran</h3>
+
+                                <div className="image-preview-container" onClick={toggleModal}>
+                                    <img
+                                        src={fotoUrl || fotoLocal}
+                                        alt="Klik untuk memperbesar"
+                                        className="img-preview"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = fotoLocal;
+                                        }}
+                                    />
+
+                                    <div className="image-overlay">
+                                        <span>Klik untuk memperbesar</span>
+                                    </div>
+                                </div>
+
+                                <p>Note : Klik untuk memperbesar gambar</p>
+                            </div>
+                        </div> */}
                     </div>
                 )}
 
@@ -239,7 +356,11 @@ const AdminLaporanCepatDetailPage = () => {
                     <div className="modal-overlay" onClick={toggleModal}>
                         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                             <button className="modal-close" onClick={toggleModal}>&times;</button>
-                            <img src={fotoUrl} alt="Ukuran Penuh" className="img-full" />
+                            <img
+                                src={fotoPreviewUrl || FALLBACK_IMAGE}
+                                alt="Ukuran Penuh"
+                                className="img-full"
+                            />
                         </div>
                     </div>
                 )}

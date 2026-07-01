@@ -347,14 +347,9 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
                                           color: Colors.grey.shade700,
                                         ),
                                       ),
-                                      // Text(
-                                      //   it.time.isEmpty ? "-" : it.time,
-                                      //   style: TextStyle(
-                                      //     fontSize: 12,
-                                      //     color: Colors.grey.shade700,
-                                      //   ),
-                                      // ),
-                                      Row(
+
+                                      // PERBAIKAN 1: Gunakan Wrap untuk Waktu agar bisa turun baris jika layar sempit
+                                      Wrap(
                                         children: [
                                           Text(
                                             "Waktu : ${_extractTime(it.time)}",
@@ -370,20 +365,14 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
                                               color: Colors.grey.shade700,
                                             ),
                                           ),
-
-                                          // const SizedBox(width: 12),
                                         ],
                                       ),
                                       const SizedBox(height: 4),
-                                      // Text(
-                                      //   "${it.position.latitude.toStringAsFixed(5)}, "
-                                      //   "${it.position.longitude.toStringAsFixed(5)}",
-                                      //   style: TextStyle(
-                                      //     fontSize: 12,
-                                      //     color: Colors.grey.shade600,
-                                      //   ),
-                                      // ),
-                                      Row(
+
+                                      // PERBAIKAN 2: Gunakan Wrap untuk Lat & Lon agar tidak overflow
+                                      Wrap(
+                                        spacing:
+                                            12, // Menggantikan SizedBox(width: 12) yang sebelumnya ada di dalam Row
                                         children: [
                                           Text(
                                             "Lat: ${it.position.latitude.toStringAsFixed(5)}",
@@ -392,7 +381,6 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
                                               color: Colors.grey.shade600,
                                             ),
                                           ),
-                                          const SizedBox(width: 12),
                                           Text(
                                             "Lon: ${it.position.longitude.toStringAsFixed(5)}",
                                             style: TextStyle(
@@ -402,6 +390,7 @@ class _RekapKriminalPageState extends State<RekapKriminalPage> {
                                           ),
                                         ],
                                       ),
+
                                       Text(
                                         it.namaPelapor != null
                                             ? "Pelapor: ${it.namaPelapor}"

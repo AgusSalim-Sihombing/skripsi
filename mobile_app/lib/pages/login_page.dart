@@ -546,10 +546,21 @@ class _LoginScreenState extends State<LoginScreen> {
               "Akun kamu terdaftar sebagai OFFICER, tapi masih menunggu verifikasi admin.",
             );
 
+            //   Navigator.pushReplacement(
+            //     context,
+            //     MaterialPageRoute(
+            //       builder: (context) => LandingPage(
+            //         username: displayName,
+            //         token: tokenStr,
+            //         baseUrl: socketBaseUrl,
+            //       ),
+            //     ),
+            //   );
+            // } else {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => LandingPage(
+                builder: (context) => OfficerHomePage(
                   username: displayName,
                   token: tokenStr,
                   baseUrl: socketBaseUrl,
@@ -643,8 +654,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
             ),
           ),
-          // const SizedBox(height: 100.0),
 
+          // const SizedBox(height: 100.0),
           if (isDark) ...[
             Positioned(
               top: -60,
@@ -671,8 +682,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ],
-
-          
 
           Center(
             // heightFactor: 30.0,

@@ -2096,7 +2096,10 @@ class _IncidentPhotoBoxState extends State<_IncidentPhotoBox> {
 
       final res = await http.get(
         url,
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          "ngrok-skip-browser-warning": "true",
+        },
       );
 
       if (res.statusCode == 200) {

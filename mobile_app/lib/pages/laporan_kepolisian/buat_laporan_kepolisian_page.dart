@@ -95,6 +95,20 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
   String _fmtTime(TimeOfDay t) =>
       "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00";
 
+  String _namaHari(DateTime d) {
+    const hari = [
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+      "Minggu",
+    ];
+
+    return hari[d.weekday - 1];
+  }
+
   Future<void> _pickDate(void Function(DateTime) onPicked) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -292,6 +306,25 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
     );
   }
 
+  Widget _readonlyField({required String label, required String value}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextFormField(
+        readOnly: true,
+        controller: TextEditingController(text: value.isEmpty ? "-" : value),
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        style: const TextStyle(color: Colors.black87),
+      ),
+    );
+  }
+
   Widget _pickerRow({
     required String label,
     required String value,
@@ -482,15 +515,23 @@ class _BuatLaporanKepolisianPageState extends State<BuatLaporanKepolisianPage> {
           child: Column(
             children: [
               _section("Waktu Kejadian", [
-                _tf("waktu_kejadian_hari", label: "Hari", required: true),
                 _datePickerField(
                   label: "Tanggal",
                   value: _waktuKejadianTanggal,
                   required: true,
                   onTap: () => _pickDate(
-                    (d) => setState(() => _waktuKejadianTanggal = d),
+                    (d) => setState(() {
+                      _waktuKejadianTanggal = d;
+                      c["waktu_kejadian_hari"]!.text = _namaHari(d);
+                    }),
                   ),
                 ),
+
+                _readonlyField(
+                  label: "Hari",
+                  value: c["waktu_kejadian_hari"]!.text,
+                ),
+
                 _timePickerField(
                   label: "Jam",
                   value: _waktuKejadianJam,

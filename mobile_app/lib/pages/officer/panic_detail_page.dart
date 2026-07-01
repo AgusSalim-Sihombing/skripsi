@@ -224,6 +224,7 @@ class _PanicDetailPageState extends State<PanicDetailPage> {
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
+          "ngrok-skip-browser-warning": "true",
         },
       );
 
@@ -282,6 +283,7 @@ class _PanicDetailPageState extends State<PanicDetailPage> {
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
+          "ngrok-skip-browser-warning": "true",
         },
       );
 

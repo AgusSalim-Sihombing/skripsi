@@ -169,13 +169,50 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
     }
   }
 
+  // String _formatWaktu(String? waktu) {
+  //   if (waktu == null || waktu.isEmpty) return '-';
+  //   final parts = waktu.split(':');
+  //   if (parts.length >= 2) {
+  //     return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+  //   }
+  //   return waktu;
+  // }
+
   String _formatWaktu(String? waktu) {
-    if (waktu == null || waktu.isEmpty) return '-';
-    final parts = waktu.split(':');
-    if (parts.length >= 2) {
-      return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+    if (waktu == null || waktu.trim().isEmpty) return '-';
+
+    final value = waktu.trim();
+
+    try {
+      // Kalau format dari API mengandung Z / timezone, contoh:
+      // 2026-06-29T12:32:56.000Z
+      if (value.endsWith('Z') || value.contains('+')) {
+        final dateTime = DateTime.parse(value).toLocal();
+
+        final jam = dateTime.hour.toString().padLeft(2, '0');
+        final menit = dateTime.minute.toString().padLeft(2, '0');
+
+        return '$jam:$menit';
+      }
+
+      // Kalau format database biasa:
+      // 2026-06-29 19:32:56
+      final timePart = value.contains(' ')
+          ? value.split(' ').last
+          : value.contains('T')
+          ? value.split('T').last
+          : value;
+
+      final parts = timePart.split(':');
+
+      if (parts.length >= 2) {
+        return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+      }
+
+      return value;
+    } catch (_) {
+      return value;
     }
-    return waktu;
   }
 
   String _formatCreatedAt(String? createdAt) {
@@ -198,7 +235,7 @@ class _DetailLaporanCepatState extends State<DetailLaporanCepat> {
             style: const TextStyle(
               fontSize: 13,
               color: Color.fromARGB(255, 0, 0, 0),
-              fontWeight: FontWeight.w600
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

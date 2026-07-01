@@ -4,7 +4,6 @@ import { Form, Button, Spinner, Card, Table, Modal } from "react-bootstrap";
 import AdminLayout from "../../../../shared/layout/AdminLayout";
 import axios from "axios";
 import ActionNotification from "../../../../shared/components/action_notification/ActionNotification";
-
 const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL;
 
 const emptyForm = {
@@ -81,7 +80,7 @@ const getStatusBadgeStyle = (status) => {
 const AdminUserDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-
+    const [ktpPreviewUrl, setKtpPreviewUrl] = useState("");
     const [user, setUser] = useState(null);
     const [form, setForm] = useState(emptyForm);
     const [loading, setLoading] = useState(true);
@@ -114,8 +113,40 @@ const AdminUserDetailPage = () => {
 
     const authHeader = () => {
         const token = localStorage.getItem("sigap_admin_token");
-        return token ? { Authorization: `Bearer ${token}` } : {};
+        // return token ? { Authorization: `Bearer ${token}` } : {};
+        return {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "ngrok-skip-browser-warning": "true",
+        };
     };
+
+    const loadKtp = useCallback(async () => {
+        const token = localStorage.getItem("sigap_admin_token");
+
+        if (!token) {
+            setKtpError(true);
+            return;
+        }
+
+        try {
+            setKtpError(false);
+
+            const res = await axios.get(`${API_BASE_URL}/admin/users/${id}/ktp`, {
+                responseType: "blob",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "ngrok-skip-browser-warning": "true",
+                },
+            });
+
+            const objectUrl = URL.createObjectURL(res.data);
+            setKtpPreviewUrl(objectUrl);
+        } catch (err) {
+            console.error("loadKtp error:", err);
+            setKtpError(true);
+            setKtpPreviewUrl("");
+        }
+    }, [id]);
 
     const loadUser = useCallback(async () => {
         try {
@@ -155,8 +186,18 @@ const AdminUserDetailPage = () => {
             navigate("/login-admin");
             return;
         }
+
         loadUser();
-    }, [navigate, loadUser]);
+        loadKtp();
+    }, [navigate, loadUser, loadKtp]);
+
+    useEffect(() => {
+        return () => {
+            if (ktpPreviewUrl) {
+                URL.revokeObjectURL(ktpPreviewUrl);
+            }
+        };
+    }, [ktpPreviewUrl]);
 
     const handleFormChange = (e) => {
         const { name, value } = e.target;
@@ -327,7 +368,7 @@ const AdminUserDetailPage = () => {
                         </button>
 
                         <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>
-                            Detail User & Status Akun
+                            Detail Akun & Status Akun
                         </h1>
                         <p style={{ marginTop: "8px", color: "#64748b" }}>
                             Lihat data lengkap pengguna, cek foto KTP, lalu kelola status akun
@@ -420,7 +461,7 @@ const AdminUserDetailPage = () => {
                                         boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
                                     }}
                                 >
-                                    <Card.Body style={{ padding: "20px" }}>
+                                    <Card.Body style={{ padding: "50px" }}>
                                         <h5 style={{ marginBottom: "16px", fontWeight: 700 }}>
                                             Data Identitas
                                         </h5>
@@ -444,9 +485,10 @@ const AdminUserDetailPage = () => {
                                         border: "none",
                                         borderRadius: "20px",
                                         boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+                                        marginTop: "100px",
                                     }}
                                 >
-                                    <Card.Body style={{ padding: "20px" }}>
+                                    <Card.Body style={{ padding: "50px" }}>
                                         <h5 style={{ marginBottom: "20px", fontWeight: 700 }}>
                                             Kelola Status Akun
                                         </h5>
@@ -662,7 +704,7 @@ const AdminUserDetailPage = () => {
                                 >
                                     <Card.Body
                                         style={{
-                                            padding: "20px",
+                                            padding: "10px",
                                             display: "flex",
                                             flexDirection: "column",
                                             height: "100%",
@@ -698,8 +740,8 @@ const AdminUserDetailPage = () => {
                                                     onError={() => setKtpError(true)}
                                                     style={{
                                                         width: "100%",
-                                                        height: "100%",
-                                                        objectFit: "contain",
+                                                        height: "80%",
+                                                        objectFit: "fit",
                                                         display: "block",
                                                     }}
                                                 />
@@ -730,47 +772,108 @@ const AdminUserDetailPage = () => {
                                 </Card>
                             </div>
                         </div>
+                        {/* CSS Tambahan untuk memaksa modal terkunci di tengah layar & memiliki background kotak putih */}
+                        <style>
+                            {`
+                                /* Mengunci posisi di tengah layar */
+                                .modal-tengah-paksa {
+                                    display: flex !important;
+                                    align-items: center !important;
+                                    justify-content: center !important;
+                                    position: fixed !important;
+                                    top: 0 !important;
+                                    left: 0 !important;
+                                    width: 100vw !important;
+                                    height: 100vh !important;
+                                    z-index: 9999 !important;
+                                }
+                                
+                                /* Mengatur lebar maksimal kotak modal */
+                                .modal-tengah-paksa .modal-dialog {
+                                    max-width: 500px !important;
+                                    width: 100% !important;
+                                    margin: 0 !important;
+                                    
+                                }
+
+                                /* MEMBUAT KOTAK PUTIH (Tambahan Baru) */
+                                .modal-tengah-paksa .modal-content {
+                                    background-color: #ffffff !important; /* Latar belakang putih */
+                                    border-radius: 16px !important;       /* Sudut membulat */
+                                    border: none !important;              /* Menghilangkan garis tepi kaku */
+                                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important; /* Efek bayangan / shadow */
+                                }
+                            `}
+                        </style>
 
                         <Modal
+
                             show={showTakedownModal}
                             onHide={() => !saving && setShowTakedownModal(false)}
-                            centered
                             backdrop="static"
                             keyboard={!saving}
-                            contentClassName="takedown-modal-content"
-                            dialogClassName="takedown-modal-dialog"
-                            backdropClassName="takedown-modal-backdrop"
+                            className="modal-tengah-paksa" // Menggunakan class CSS khusus di atas
+                            contentClassName="border-0 shadow-lg"
+                            style={{ backgroundColor: "rgba(15, 23, 42, 0.6)", border: "1px solid #e2e8f0" }} // Efek layar belakang meredup
                         >
-                            <Modal.Header closeButton={!saving}>
-                                <Modal.Title>Nonaktifkan Akun User</Modal.Title>
+                            <Modal.Header
+                                // closeButton={!saving}
+                                style={{ borderBottom: "none !important", padding: "24px 24px 10px 24px", backgroundColor: "#f8fafc" }}
+                            >
+                                <Modal.Title style={{ fontWeight: 700, fontSize: "22px", color: "#0f172a" }}>
+                                    Nonaktifkan Akun User
+                                </Modal.Title>
                             </Modal.Header>
-                            +
 
-                            <Modal.Body>
-                                <p style={{ marginBottom: "12px", color: "#475569" }}>
+                            <Modal.Body style={{ padding: "0 24px 24px 24px", backgroundColor: "#f8fafc" }}>
+                                <p style={{
+                                    marginBottom: "20px",
+                                    color: "#64748b",
+                                    fontSize: "15px",
+                                    lineHeight: "1.6"
+                                }}>
                                     Masukkan alasan kenapa akun ini dinonaktifkan sementara.
                                     Alasan ini akan disimpan dan bisa ditampilkan ke pengguna.
                                 </p>
 
                                 <Form.Group>
-                                    <Form.Label>Alasan Takedown</Form.Label>
+                                    <Form.Label style={{ fontWeight: 600, color: "#475569", marginBottom: "8px" }}>
+                                        Alasan Takedown
+                                    </Form.Label>
                                     <Form.Control
                                         as="textarea"
-                                        rows={4}
+                                        rows={2}
                                         value={takedownReason}
                                         onChange={(e) => setTakedownReason(e.target.value)}
-                                        placeholder="Contoh: Akun melanggar aturan komunitas / penggunaan tidak sesuai kebijakan."
+                                        placeholder="Contoh: Akun melanggar aturan komunitas..."
                                         disabled={saving}
                                         autoFocus
+                                        style={{
+                                            borderRadius: "12px",
+                                            padding: "16px",
+                                            borderColor: "#e2e8f0",
+                                            boxShadow: "none",
+                                            resize: "none",
+                                            backgroundColor: "#f8fafc"
+                                        }}
                                     />
                                 </Form.Group>
                             </Modal.Body>
 
-                            <Modal.Footer>
+                            <Modal.Footer style={{ borderTop: "none", padding: "16px 24px 24px 24px", gap: "8px", backgroundColor: "#f8fafc", display: "flex", justifyContent: "flex-end" }}>
                                 <Button
-                                    variant="secondary"
+                                    variant="light"
                                     onClick={() => setShowTakedownModal(false)}
                                     disabled={saving}
+                                    style={{
+                                        fontWeight: 600,
+                                        borderRadius: "10px",
+                                        padding: "10px 20px",
+                                        backgroundColor: "#dddddd",
+                                        color: "#475569",
+                                        border: "none",
+
+                                    }}
                                 >
                                     Batal
                                 </Button>
@@ -778,8 +881,22 @@ const AdminUserDetailPage = () => {
                                     variant="danger"
                                     onClick={handleConfirmTakedown}
                                     disabled={saving}
+                                    style={{
+                                        fontWeight: 600,
+                                        borderRadius: "10px",
+                                        padding: "10px 20px",
+                                        backgroundColor: "#ef4444",
+                                        border: "none"
+                                    }}
                                 >
-                                    {saving ? "Memproses..." : "Oke, Nonaktifkan"}
+                                    {saving ? (
+                                        <>
+                                            <Spinner as="span" animation="border" size="sm" className="me-2" />
+                                            Memproses...
+                                        </>
+                                    ) : (
+                                        "Oke, Nonaktifkan"
+                                    )}
                                 </Button>
                             </Modal.Footer>
                         </Modal>

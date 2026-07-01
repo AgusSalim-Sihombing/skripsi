@@ -4,7 +4,11 @@ import 'package:mobile_app/services/police_report_service.dart';
 class DetailLaporanKepolisianPage extends StatefulWidget {
   final int reportId;
   final String? reportTitle;
-  const DetailLaporanKepolisianPage({super.key, required this.reportId, this.reportTitle});
+  const DetailLaporanKepolisianPage({
+    super.key,
+    required this.reportId,
+    this.reportTitle,
+  });
 
   @override
   State<DetailLaporanKepolisianPage> createState() =>
@@ -24,6 +28,39 @@ class _DetailLaporanKepolisianPageState
     if (v == null) return '-';
     final t = v.toString().trim();
     return t.isEmpty ? '-' : t;
+  }
+
+  String _formatTanggal(dynamic value) {
+    if (value == null) return '-';
+
+    final text = value.toString().trim();
+    if (text.isEmpty) return '-';
+
+    try {
+      // Ambil pola tanggal dari format:
+      // 2026-06-29
+      // 2026-06-29 19:32:56
+      // 2026-06-29T12:32:56.000Z
+      final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(text);
+
+      if (match != null) {
+        final year = match.group(1)!;
+        final month = match.group(2)!;
+        final day = match.group(3)!;
+
+        return '$day-$month-$year';
+      }
+
+      final d = DateTime.parse(text).toLocal();
+
+      final day = d.day.toString().padLeft(2, '0');
+      final month = d.month.toString().padLeft(2, '0');
+      final year = d.year.toString();
+
+      return '$day-$month-$year';
+    } catch (_) {
+      return text;
+    }
   }
 
   Widget _kv(String label, dynamic value) {
@@ -74,8 +111,6 @@ class _DetailLaporanKepolisianPageState
       if (mounted) setState(() => _loading = false);
     }
   }
-
- 
 
   Future<void> _cancel() async {
     final d = _data;
@@ -143,7 +178,7 @@ class _DetailLaporanKepolisianPageState
     return Scaffold(
       // backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
-        title: Text("Detail Laporan ${d?['tindak_pidana'] ?? widget.reportTitle ?? ''}"),
+        title: Text("Detail Laporan Kepolisian"),
         // backgroundColor: const Color(0xFF8B5A24),
         centerTitle: true,
         actions: [
@@ -165,14 +200,14 @@ class _DetailLaporanKepolisianPageState
                     _kv("Status", statusRaw),
                     _kv("Assigned officer", assignedOfficer),
                     _kv("Catatan admin", d['catatan_admin']),
-                    _kv("Created", d['created_at']),
-                    _kv("Updated", d['updated_at']),
+                    _kv("Created", _formatTanggal(d['created_at'])),
+                    _kv("Updated", _formatTanggal(d['updated_at'])),
                   ]),
                   const SizedBox(height: 12),
 
                   _section("Waktu & Tempat Kejadian", [
                     _kv("Hari", d['waktu_kejadian_hari']),
-                    _kv("Tanggal", d['waktu_kejadian_tanggal']),
+                    _kv("Tanggal", _formatTanggal(d['waktu_kejadian_tanggal'])),
                     _kv("Jam", d['waktu_kejadian_jam']),
                     const SizedBox(height: 6),
                     _kv("Jalan", d['tempat_jalan']),
@@ -208,7 +243,7 @@ class _DetailLaporanKepolisianPageState
 
                   _section("Dilaporkan Pada", [
                     _kv("Hari", d['dilaporkan_hari']),
-                    _kv("Tanggal", d['dilaporkan_tanggal']),
+                    _kv("Tanggal", _formatTanggal(d['dilaporkan_tanggal'])),
                     _kv("Jam", d['dilaporkan_jam']),
                   ]),
                   const SizedBox(height: 12),

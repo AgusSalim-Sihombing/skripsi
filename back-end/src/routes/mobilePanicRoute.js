@@ -16,7 +16,7 @@ router.post("/officer/panic/:id/respond", authUser, requireRole("officer"), pani
 
 // optional: list offered panic untuk page dispatch
 router.get("/officer/panic/offered", authUser, requireRole("officer"), panicController.listOfferedPanics);
-router.post("/officer/panic/:id/resolve", authUser, requireRole("officer"), panicController.resolvePanic);
+// router.post("/officer/panic/:id/resolve", authUser, requireRole("officer"), panicController.resolvePanic);
 router.get("/panic/:id", authUser, requireRole("masyarakat"), panicController.getPanicStatus);
 router.post(
     "/officer/panic/:id/resolve",

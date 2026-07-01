@@ -449,7 +449,7 @@ class _OfficerFieldReportInboxPageState
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Inbox Laporan",
+          "Field Report",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,

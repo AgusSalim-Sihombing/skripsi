@@ -388,15 +388,15 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
       return;
     }
 
-    if (_selectedDate == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tanggal dan waktu kejadian wajib diisi'),
-          padding: EdgeInsets.all(16),
-        ),
-      );
-      return;
-    }
+    // if (_selectedDate == null || _selectedTime == null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(
+    //       content: Text('Tanggal dan waktu kejadian wajib diisi'),
+    //       padding: EdgeInsets.all(16),
+    //     ),
+    //   );
+    //   return;
+    // }
 
     if (_pickedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -417,13 +417,13 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
       return;
     }
 
-    final tanggal = _selectedDate!;
-    final tanggalStr =
-        '${tanggal.year.toString().padLeft(4, '0')}-${tanggal.month.toString().padLeft(2, '0')}-${tanggal.day.toString().padLeft(2, '0')}';
+    // final tanggal = _selectedDate!;
+    // final tanggalStr =
+    //     '${tanggal.year.toString().padLeft(4, '0')}-${tanggal.month.toString().padLeft(2, '0')}-${tanggal.day.toString().padLeft(2, '0')}';
 
-    final waktu = _selectedTime!;
-    final waktuStr =
-        '${waktu.hour.toString().padLeft(2, '0')}:${waktu.minute.toString().padLeft(2, '0')}';
+    // final waktu = _selectedTime!;
+    // final waktuStr =
+    //     '${waktu.hour.toString().padLeft(2, '0')}:${waktu.minute.toString().padLeft(2, '0')}';
 
     setState(() {
       _submitting = true;
@@ -441,8 +441,8 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
       request.fields['deskripsi'] = _deskripsiController.text.trim();
       request.fields['latitude'] = _selectedLatLng!.latitude.toString();
       request.fields['longitude'] = _selectedLatLng!.longitude.toString();
-      request.fields['tanggal_kejadian'] = tanggalStr;
-      request.fields['waktu_kejadian'] = waktuStr;
+      // request.fields['tanggal_kejadian'] = tanggalStr;
+      // request.fields['waktu_kejadian'] = waktuStr;
       request.fields['is_anonim'] = _isAnonim ? '1' : '0';
 
       final bytes = await _pickedImage!.readAsBytes();
@@ -753,41 +753,44 @@ class _LaporCepatPageState extends State<LaporCepatPage> {
             Row(
               children: [
                 Expanded(
-                  child: InkWell(
-                    onTap: _pickDate,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        // labelText: 'Tanggal Kejadian',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _selectedDate == null
-                            ? 'Pilih tanggal'
-                            : '${_selectedDate!.day.toString().padLeft(2, '0')}-'
-                                  '${_selectedDate!.month.toString().padLeft(2, '0')}-'
-                                  '${_selectedDate!.year}',
-                      ),
-                    ),
+                  // child: InkWell(
+                  //   onTap: _pickDate,
+                  //   child: InputDecorator(
+                  //     decoration: const InputDecoration(
+                  //       // labelText: 'Tanggal Kejadian',
+                  //       border: OutlineInputBorder(),
+                  //     ),
+                  //     child: Text(
+                  //       _selectedDate == null
+                  //           ? 'Pilih tanggal'
+                  //           : '${_selectedDate!.day.toString().padLeft(2, '0')}-'
+                  //                 '${_selectedDate!.month.toString().padLeft(2, '0')}-'
+                  //                 '${_selectedDate!.year}',
+                  //     ),
+                  //   ),
+                  // ),
+                  child: Text(
+                    "Tanggal dan Waktu Akan Otomatis diisi saat laporan dikirim. (Berdasarkan waktu saat ini)",
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: InkWell(
-                    onTap: _pickTime,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        // labelText: 'Waktu Kejadian',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _selectedTime == null
-                            ? 'Pilih waktu'
-                            : '${_selectedTime!.hour.toString().padLeft(2, '0')}:'
-                                  '${_selectedTime!.minute.toString().padLeft(2, '0')}',
-                      ),
-                    ),
-                  ),
-                ),
+                // const SizedBox(width: 16),
+                // Expanded(
+                //   child: InkWell(
+                //     onTap: _pickTime,
+                //     child: InputDecorator(
+                //       decoration: const InputDecoration(
+                //         // labelText: 'Waktu Kejadian',
+                //         border: OutlineInputBorder(),
+                //       ),
+                //       child: Text(
+                //         _selectedTime == null
+                //             ? 'Pilih waktu'
+                //             : '${_selectedTime!.hour.toString().padLeft(2, '0')}:'
+                //                   '${_selectedTime!.minute.toString().padLeft(2, '0')}',
+                //       ),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(height: 16),

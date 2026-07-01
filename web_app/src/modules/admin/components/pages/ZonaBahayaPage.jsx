@@ -175,6 +175,7 @@ const ZonaBahayaPage = () => {
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
+                            "ngrok-skip-browser-warning": "true",
                         },
                     }
                 );
@@ -634,7 +635,7 @@ const ZonaBahayaPage = () => {
                         </p>
 
                         {errorMsg && <div className="login-error" style={{
-                            color:"red",
+                            color: "red",
                         }}>{errorMsg}</div>}
 
                         {form.id_laporan_sumber && (
@@ -1007,7 +1008,7 @@ const ZonaBahayaPage = () => {
                             <table className="zona-table">
                                 <thead>
                                     <tr style={{
-                                        textAlign:"center",
+                                        textAlign: "center",
                                         // display:"flex"
                                     }}>
                                         <th>Nama Zona</th>

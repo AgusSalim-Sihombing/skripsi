@@ -89,10 +89,10 @@ const createLaporanCepatMobile = async (req, res) => {
       is_anonim, // "0" atau "1"
     } = req.body;
 
-    if (!judul_laporan || !latitude || !longitude || !tanggal_kejadian || !waktu_kejadian) {
+    if (!judul_laporan || !latitude || !longitude) {
       return res.status(400).json({
         success: false,
-        message: "Judul, lokasi, tanggal dan waktu kejadian wajib diisi",
+        message: "Judul, lokasi, kejadian wajib diisi",
       });
     }
 
@@ -139,8 +139,6 @@ const createLaporanCepatMobile = async (req, res) => {
         deskripsi,
         latitude,
         longitude,
-        tanggal_kejadian,
-        waktu_kejadian,
         foto,
         is_anonim,
         status_validasi,
@@ -148,7 +146,7 @@ const createLaporanCepatMobile = async (req, res) => {
         no_hp_pelapor,   -- Kolom baru
         email_pelapor    -- Kolom baru
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         idUser,
@@ -156,8 +154,6 @@ const createLaporanCepatMobile = async (req, res) => {
         deskripsi || null,
         Number(latitude),
         Number(longitude),
-        tanggal_kejadian,
-        waktu_kejadian,     // "HH:MM"
         fotoBuffer,
         is_anonim === "1" ? 1 : 0,
         "pending",          // default

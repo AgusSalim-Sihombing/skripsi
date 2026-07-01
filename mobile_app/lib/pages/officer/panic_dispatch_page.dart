@@ -29,6 +29,22 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
   final TextEditingController _searchC = TextEditingController();
   String _q = "";
 
+  bool _isAssigned(Map<String, dynamic> item) {
+    final status = (item["status"] ?? "").toString().toUpperCase();
+    return status == "ASSIGNED";
+  }
+
+  String _statusLabel(dynamic status) {
+    final s = (status ?? "").toString().toUpperCase();
+
+    if (s == "ASSIGNED") return "Diproses";
+    if (s == "OPEN") return "Menunggu";
+    if (s == "RESOLVED") return "Selesai";
+    if (s == "CANCELLED") return "Dibatalkan";
+
+    return s.isEmpty ? "-" : s;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -63,24 +79,63 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
     super.dispose();
   }
 
+  // void _onPanicNew(dynamic payload) {
+  //   final data = Map<String, dynamic>.from(payload);
+  //   final pid = data["panicId"];
+
+  //   setState(() {
+  //     final exists = _items.any((e) => e["panicId"] == pid);
+  //     if (!exists) {
+  //       _items.insert(0, data); // masuk paling atas
+  //     }
+  //   });
+  // }
+
   void _onPanicNew(dynamic payload) {
     final data = Map<String, dynamic>.from(payload);
-    final pid = data["panicId"];
+
+    // Karena halaman ini hanya menampilkan panic ASSIGNED,
+    // panic baru yang masih OPEN tidak perlu dimasukkan.
+    if (!_isAssigned(data)) return;
+
+    final pid = data["panicId"] ?? data["id"];
 
     setState(() {
-      final exists = _items.any((e) => e["panicId"] == pid);
+      final exists = _items.any((e) => (e["panicId"] ?? e["id"]) == pid);
       if (!exists) {
-        _items.insert(0, data); // masuk paling atas
+        _items.insert(0, data);
       }
     });
   }
 
+  // void _onPanicAssigned(dynamic payload) {
+  //   final data = Map<String, dynamic>.from(payload);
+  //   final pid = data["panicId"];
+
+  //   setState(() {
+  //     _items.removeWhere((e) => e["panicId"] == pid);
+  //   });
+  // }
+
   void _onPanicAssigned(dynamic payload) {
     final data = Map<String, dynamic>.from(payload);
-    final pid = data["panicId"];
+    final pid = data["panicId"] ?? data["id"];
+
+    if (!_isAssigned(data)) {
+      setState(() {
+        _items.removeWhere((e) => (e["panicId"] ?? e["id"]) == pid);
+      });
+      return;
+    }
 
     setState(() {
-      _items.removeWhere((e) => e["panicId"] == pid);
+      final index = _items.indexWhere((e) => (e["panicId"] ?? e["id"]) == pid);
+
+      if (index >= 0) {
+        _items[index] = {..._items[index], ...data, "status": "ASSIGNED"};
+      } else {
+        _items.insert(0, {...data, "status": "ASSIGNED"});
+      }
     });
   }
 
@@ -92,28 +147,44 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
 
     try {
       final resp = await http.get(
-        Uri.parse("${widget.baseUrl}/api/mobile/officer/panic/offered"),
+        Uri.parse("${widget.baseUrl}/api/mobile/officer/panic/history"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
+          "ngrok-skip-browser-warning": "true",
         },
       );
 
       if (resp.statusCode != 200) {
         setState(() {
-          _error = "Gagal load dispatch (${resp.statusCode})";
+          _error = "Gagal load panic diproses (${resp.statusCode})";
           _loading = false;
         });
         return;
       }
 
       final list = jsonDecode(resp.body) as List<dynamic>;
-      final mapped = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
-      // sort by created_at/createdAt desc (kalau ada)
+      final mapped = list.map((e) => Map<String, dynamic>.from(e)).where((x) {
+        final status = (x["status"] ?? "").toString().toUpperCase();
+        return status == "ASSIGNED";
+      }).toList();
+
       mapped.sort((a, b) {
-        final ad = (a["created_at"] ?? a["createdAt"] ?? "").toString();
-        final bd = (b["created_at"] ?? b["createdAt"] ?? "").toString();
+        final ad =
+            (a["respondedAt"] ??
+                    a["responded_at"] ??
+                    a["created_at"] ??
+                    a["createdAt"] ??
+                    "")
+                .toString();
+        final bd =
+            (b["respondedAt"] ??
+                    b["responded_at"] ??
+                    b["created_at"] ??
+                    b["createdAt"] ??
+                    "")
+                .toString();
         return bd.compareTo(ad);
       });
 
@@ -132,14 +203,20 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
   }
 
   List<Map<String, dynamic>> get _filtered {
-    if (_q.isEmpty) return _items;
+    final assignedItems = _items.where((x) {
+      final status = (x["status"] ?? "").toString().toUpperCase();
+      return status == "ASSIGNED";
+    }).toList();
 
-    return _items.where((x) {
+    if (_q.isEmpty) return assignedItems;
+
+    return assignedItems.where((x) {
       final fromName = (x["fromName"] ?? x["citizen_name"] ?? "")
           .toString()
           .toLowerCase();
       final addr = (x["address"] ?? "").toString().toLowerCase();
       final pid = (x["panicId"] ?? x["id"] ?? "").toString().toLowerCase();
+
       return fromName.contains(_q) || addr.contains(_q) || pid.contains(_q);
     }).toList();
   }
@@ -157,6 +234,51 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
     final n = (v is num) ? v.toDouble() : double.tryParse("$v");
     if (n == null) return "-";
     return n.toStringAsFixed(6);
+  }
+
+  String _fmtTime(dynamic iso) {
+    if (iso == null || iso.toString().isEmpty) return "-";
+
+    try {
+      final dt = DateTime.parse(iso.toString()).toLocal();
+
+      final months = [
+        '',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Agt',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
+      ];
+
+      final day = dt.day.toString().padLeft(2, '0');
+      final month = months[dt.month];
+      final year = dt.year;
+      final hour = dt.hour.toString().padLeft(2, "0");
+      final minute = dt.minute.toString().padLeft(2, "0");
+
+      return "$day $month $year, $hour:$minute";
+    } catch (_) {
+      return iso.toString();
+    }
+  }
+
+  Map<String, dynamic> _statusProps(String status) {
+    switch (status.toUpperCase()) {
+      case "RESOLVED":
+        return {'text': 'Selesai', 'color': Colors.green};
+      case "ASSIGNED":
+        return {'text': 'Diproses', 'color': Colors.orange};
+      default:
+        return {'text': status.toUpperCase(), 'color': Colors.red};
+    }
   }
 
   Future<void> _openDetail(Map<String, dynamic> item) async {
@@ -247,154 +369,157 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
                         SizedBox(height: 70),
                         Center(
                           child: Text(
-                            "Belum ada panic masuk.\n(atau semuanya udah diambil officer lain)",
+                            "Belum ada panic yang sedang diproses.",
                             textAlign: TextAlign.center,
                           ),
                         ),
                       ],
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
                       itemCount: _filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, i) {
                         final x = _filtered[i];
 
                         final pid = x["panicId"] ?? x["id"];
-                        final fromName = (x["fromName"] ?? "-").toString();
+
+                        final fromName =
+                            (x["fromName"] ??
+                                    x["citizen_name"] ??
+                                    "Tidak Diketahui")
+                                .toString();
+
                         final addr =
                             (x["address"] ??
                                     "${_fmtCoord(x["lat"])}, ${_fmtCoord(x["lng"])}")
                                 .toString();
+
+                        final statusStr = (x["status"] ?? "-").toString();
                         final dist = _fmtDistance(x["distanceM"]);
-                        final status = (x["status"] ?? "OPEN").toString();
 
-                        return InkWell(
-                          onTap: () => _openDetail(x),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppColors.textSoft2,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                              border: Border.all(
-                                color: status == "ASSIGNED"
-                                    ? Colors.green.withOpacity(0.35)
-                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.25),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 6,
+                        final respondedAt = _fmtTime(
+                          x["respondedAt"] ??
+                              x["responded_at"] ??
+                              x["assignedAt"] ??
+                              x["assigned_at"] ??
+                              x["updatedAt"] ??
+                              x["updated_at"],
+                        );
+
+                        final statusProps = _statusProps(statusStr);
+
+                        return Card(
+                          color: AppColors.textMuted4,
+                          shadowColor: Colors.black12,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () => _openDetail(x),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header: ID & Badge Status
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Panic ID: #$pid",
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey,
+                                        ),
                                       ),
-                                      // decoration: BoxDecoration(
-                                      //   color: const Color(0xFFC62828),
-                                      //   borderRadius: BorderRadius.circular(
-                                      //     999,
-                                      //   ),
-                                      // ),
-                                      child: const Row(
-                                        children: [
-                                          Icon(
-                                            Icons.warning_amber_rounded,
-                                            color: Colors.red,
-                                            size: 16,
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: statusProps['color']
+                                              .withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
                                           ),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            "PANIC",
-                                            style: TextStyle(
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.w800,
-                                            ),
+                                        ),
+                                        child: Text(
+                                          statusProps['text'],
+                                          style: TextStyle(
+                                            color: statusProps['color'],
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 11,
                                           ),
-                                        ],
+                                        ),
                                       ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 12),
+
+                                  // Nama Pelapor
+                                  Text(
+                                    fromName,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black87,
                                     ),
-                                    const Spacer(),
-                                    Text(
-                                      "ID: $pid",
-                                      style: const TextStyle(
+                                  ),
+
+                                  const SizedBox(height: 6),
+
+                                  // Lokasi
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on_outlined,
+                                        size: 16,
                                         color: Colors.black54,
-                                        fontSize: 12,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-
-                                Text(
-                                  "Dari: $fromName",
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          addr,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black54,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  "Lokasi: $addr",
-                                  style: const TextStyle(color: Colors.black87),
-                                ),
-                                const SizedBox(height: 6),
 
-                                Row(
-                                  children: [
-                                    _pill(
-                                      "Jarak",
-                                      dist,
-                                      Icons.social_distance_rounded,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    _pill(
-                                      "Status",
-                                      status,
-                                      Icons.info_outline_rounded,
-                                    ),
-                                  ],
-                                ),
+                                  const SizedBox(height: 16),
 
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () => _openDetail(x),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.bgDeep,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
+                                  // Footer Pills
+                                  Row(
+                                    children: [
+                                      _pill(
+                                        Icons.route_outlined,
+                                        "Jarak",
+                                        dist,
                                       ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
+                                      const SizedBox(width: 10),
+                                      _pill(
+                                        Icons.access_time_rounded,
+                                        "Direspon Pada",
+                                        respondedAt,
                                       ),
-                                    ),
-                                    icon: const Icon(
-                                      Icons.open_in_new,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                    label: const Text(
-                                      "BUKA DETAIL / RESPON",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         );
@@ -407,18 +532,18 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
     );
   }
 
-  Widget _pill(String label, String value, IconData icon) {
+  Widget _pill(IconData icon, String label, String value) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.shade300),
+          color: AppColors.textWhite,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: Colors.black87),
+            Icon(icon, size: 24, color: Colors.black38),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -427,14 +552,19 @@ class _PanicDispatchPageState extends State<PanicDispatchPage> {
                   Text(
                     label,
                     style: const TextStyle(fontSize: 11, color: Colors.black54),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     value,
                     style: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

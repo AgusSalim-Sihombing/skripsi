@@ -310,7 +310,10 @@ class _LandingPageState extends State<LandingPage> {
 
       final res = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/mobile/zona-bahaya'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          "ngrok-skip-browser-warning": "true",
+        },
       );
 
       if (res.statusCode == 401) {
@@ -500,10 +503,10 @@ class _LandingPageState extends State<LandingPage> {
         },
       ),
       _FeatureItem(
-        title: "Lapor Cepat",
+        title: "Lapor Kejahatan Cepat",
         icon: Icons.flash_on_outlined,
         enabled: _isVerified,
-        onTap: () => _guardVerified("Lapor Cepat", () {
+        onTap: () => _guardVerified("Lapor Kejahatan Cepat", () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const LaporCepatPage()),
@@ -620,7 +623,10 @@ class _LandingPageState extends State<LandingPage> {
                   gradient: isDark
                       ? AppGradients.loginButton
                       : const LinearGradient(
-                          colors: [Color.fromARGB(255, 19, 54, 209), Color.fromARGB(255, 74, 134, 255)],
+                          colors: [
+                            Color.fromARGB(255, 19, 54, 209),
+                            Color.fromARGB(255, 74, 134, 255),
+                          ],
                         ),
                 ),
                 child: Column(
@@ -690,10 +696,10 @@ class _LandingPageState extends State<LandingPage> {
               ),
               _DrawerTile(
                 icon: Icons.folder_open_outlined,
-                title: "Daftar Laporan Polisi",
+                title: "Riwayat Laporan Kepolisian",
                 onTap: () {
                   Navigator.pop(context);
-                  _guardVerified("Daftar Laporan Polisi", () {
+                  _guardVerified("Riwayat Laporan Kepolisian", () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1042,6 +1048,7 @@ class _TopInfoCard extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
+                  maxLines: 3,
                 ),
                 const SizedBox(height: 8),
                 Text(subtitle, style: const TextStyle(fontSize: 12)),

@@ -46,6 +46,7 @@ class BackgroundZoneService {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
+              "ngrok-skip-browser-warning": "true",
             },
           )
           .timeout(const Duration(seconds: 10));

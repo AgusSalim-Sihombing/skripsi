@@ -4,6 +4,9 @@ const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL;
 
 export const adminApi = axios.create({
     baseURL: API_BASE_URL,
+    headers: {
+        "ngrok-skip-browser-warning": "true",
+    },
 });
 
 adminApi.interceptors.request.use((config) => {

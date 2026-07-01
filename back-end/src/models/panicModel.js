@@ -134,6 +134,7 @@ const listOfferedPanicsForOfficer = async (officerId) => {
      FROM panic_dispatch_targets pdt
      JOIN panic_events pe ON pe.id = pdt.panic_id
      WHERE pdt.officer_id = ?
+     AND pe.status = 'OPEN'
      ORDER BY pe.created_at DESC
      LIMIT 30`,
         [officerId]

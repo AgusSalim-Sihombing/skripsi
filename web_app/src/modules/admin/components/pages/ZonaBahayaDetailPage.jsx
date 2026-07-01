@@ -95,7 +95,7 @@ const ZonaBahayaDetailPage = () => {
 
         if (currentStatus !== "pending") {
             return {
-                text: `Zona sudah berstatus ${zone?.status || "-"}`,
+                text: `Status Zona Saat Ini : ${zone?.status_zona || "-"}`,
                 type: "done",
             };
         }

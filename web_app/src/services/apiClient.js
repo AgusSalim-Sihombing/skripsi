@@ -4,6 +4,9 @@ const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL;
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
+    headers: {
+        "ngrok-skip-browser-warning": "true",
+    },
 });
 
 // interceptor: otomatis tambahin Bearer token
@@ -13,6 +16,6 @@ apiClient.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
-}); 
+});
 
 export default apiClient;

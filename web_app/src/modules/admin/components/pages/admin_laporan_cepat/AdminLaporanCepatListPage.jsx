@@ -70,6 +70,67 @@ const AdminLaporanCepatListPage = () => {
         loadData();
     };
 
+    const formatTanggal = (value) => {
+        if (!value) return "-";
+
+        const text = String(value).trim();
+        if (!text) return "-";
+
+        // Format database: 2026-06-29 atau 2026-06-29 19:32:56
+        const dbMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (dbMatch && !text.includes("T")) {
+            const [, year, month, day] = dbMatch;
+            return `${day}-${month}-${year}`;
+        }
+
+        // Format ISO dari backend: 2026-06-29T12:32:56.000Z
+        const date = new Date(text);
+        if (!Number.isNaN(date.getTime())) {
+            return new Intl.DateTimeFormat("id-ID", {
+                timeZone: "Asia/Jakarta",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            })
+                .format(date)
+                .replaceAll("/", "-");
+        }
+
+        return text;
+    };
+
+    const formatWaktu = (value) => {
+        if (!value) return "-";
+
+        const text = String(value).trim();
+        if (!text) return "-";
+
+        // Format database: 2026-06-29 19:32:56
+        const dbDateTimeMatch = text.match(/^\d{4}-\d{2}-\d{2}\s+(\d{2}):(\d{2})/);
+        if (dbDateTimeMatch) {
+            return `${dbDateTimeMatch[1]}:${dbDateTimeMatch[2]}`;
+        }
+
+        // Format time saja: 19:32:56
+        const timeMatch = text.match(/^(\d{2}):(\d{2})/);
+        if (timeMatch) {
+            return `${timeMatch[1]}:${timeMatch[2]}`;
+        }
+
+        // Format ISO dari backend: 2026-06-29T12:32:56.000Z
+        const date = new Date(text);
+        if (!Number.isNaN(date.getTime())) {
+            return new Intl.DateTimeFormat("id-ID", {
+                timeZone: "Asia/Jakarta",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+            }).format(date);
+        }
+
+        return text;
+    };
+
     return (
         <AdminLayout>
             <div className="laporan-cepat-page">
@@ -194,15 +255,19 @@ const AdminLaporanCepatListPage = () => {
                                         <tr key={lap.id_laporan}>
                                             <td>{lap.id_laporan}</td>
                                             <td>{lap.judul_laporan}</td>
-                                            <td>{lap.tanggal_kejadian}</td>
-                                            <td>{lap.waktu_kejadian?.slice(0, 5)}</td>
+
+                                            <td>{formatTanggal(lap.tanggal_kejadian)}</td>
+                                            <td>{formatWaktu(lap.waktu_kejadian)}</td>
+
                                             <td>
                                                 {Number(lap.latitude).toFixed(5)},{" "}
                                                 {Number(lap.longitude).toFixed(5)}
                                             </td>
+
                                             <td style={{ textTransform: "capitalize" }}>
                                                 {lap.status_validasi}
                                             </td>
+
                                             <td>
                                                 <button
                                                     type="button"
@@ -212,16 +277,14 @@ const AdminLaporanCepatListPage = () => {
                                                         fontSize: "0.8rem",
                                                     }}
                                                     onClick={() =>
-                                                        navigate(
-                                                            `/admin/laporan-cepat/${lap.id_laporan}`
-                                                        )
+                                                        navigate(`/admin/laporan-cepat/${lap.id_laporan}`)
                                                     }
                                                 >
                                                     Detail
                                                 </button>
                                             </td>
                                         </tr>
-                                    ))} 
+                                    ))}
                                 </tbody>
                             </table>
                         </div>

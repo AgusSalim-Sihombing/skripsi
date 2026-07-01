@@ -16,14 +16,71 @@ const USER_JWT_SECRET = process.env.USER_JWT_SECRET || "user-secret-dev";
 
 const mobilePanicRoute = require("./src/routes/mobilePanicRoute");
 
-
 // init socket io
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST", "PATCH"] },
 });
 
 // Middleware
-app.use(cors());
+// app.use(cors({
+//   origin: [
+//     "http://localhost:5173",
+//     "http://127.0.0.1:5173",
+//     "http://10.12.235.17:5173",
+//     "https://overbite-overbid-straw.ngrok-free.dev",
+//   ],
+//   credentials: true,
+//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//   allowedHeaders: ["Content-Type", "Authorization"],
+// }));
+
+// app.options("*", cors());
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://10.12.235.17:5173",
+];
+
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error(`Not allowed by CORS: ${origin}`));
+//     }
+//   },
+//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//   allowedHeaders: [
+//     "Content-Type",
+//     "Authorization",
+//     "ngrok-skip-browser-warning",
+//   ],
+// };
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    console.log("CORS Origin:", origin);
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "ngrok-skip-browser-warning",
+  ],
+};
+
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
+
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
@@ -32,15 +89,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use((err, req, res, next) => {
-  console.error("[GLOBAL ERROR]", err);
 
-  if (err.type === "entity.too.large") {
-    return res.status(413).json({ message: "Payload terlalu besar" });
-  }
-
-  res.status(500).json({ message: "Internal server error" });
-});
 
 // Routes
 const userRoutes = require("./src/routes/userRoute");
@@ -80,10 +129,16 @@ app.use("/api/mobile/officer", mobileOfficerFieldReportRoute);
 app.use("/api/public", communityPublicRoutes);
 app.use("/api/admin", communityAdminRoutes);
 
+
+app.get("/api/ping", (req, res) => {
+  res.json({
+    message: "API jalan",
+    time: new Date().toISOString(),
+  });
+});
+
 // Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-
 
 // biar controller bisa akses io via req.app.get("io")
 app.set("io", io);
@@ -177,6 +232,15 @@ io.on("connection", (socket) => {
   });
 });
 
+app.use((err, req, res, next) => {
+  console.error("[GLOBAL ERROR]", err);
+
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ message: "Payload terlalu besar" });
+  }
+
+  res.status(500).json({ message: "Internal server error" });
+});
 
 // Start server
 server.listen(port, () => {

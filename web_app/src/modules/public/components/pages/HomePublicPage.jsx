@@ -774,10 +774,8 @@ const HomePublicPage = () => {
                         </div>
 
                         <div className="contact-clean-admin">
-                            <p>Untuk monitoring dan validasi data:</p>
-                            <a href="/login-admin" className="contact-clean-admin__btn">
-                                Login Admin Dashboard
-                            </a>
+                            <p></p>
+
                         </div>
                     </div>
                 </div>

@@ -223,7 +223,7 @@ class _DaftarLaporanKepolisianPageState
       appBar: AppBar(
         // animateColor: true,
         title: const Text(
-          "Riwayat Laporan",
+          "Riwayat Laporan Kepolisian",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
