@@ -28,15 +28,20 @@ const normalizeStatus = (s) => {
     return x || "pending";
 };
 
-const computeCenter = (zones) => {
-    const valid = (zones || [])
-        .map((z) => ({ lat: Number(z.latitude), lng: Number(z.longitude) }))
-        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+// const computeCenter = (zones) => {
+//     const valid = (zones || [])
+//         .map((z) => ({ lat: Number(z.latitude), lng: Number(z.longitude) }))
+//         .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 
-    if (!valid.length) return [-6.2, 106.816666]; // fallback center
-    const avgLat = valid.reduce((a, b) => a + b.lat, 0) / valid.length;
-    const avgLng = valid.reduce((a, b) => a + b.lng, 0) / valid.length;
-    return [avgLat, avgLng];
+//     if (!valid.length) return [-6.2, 98.682183]; // fallback center
+//     const avgLat = valid.reduce((a, b) => a + b.lat, 0) / valid.length;
+//     const avgLng = valid.reduce((a, b) => a + b.lng, 0) / valid.length;
+//     return [avgLat, avgLng];
+// };
+
+const computeCenter = (zones) => {
+    // Abaikan kalkulasi rata-rata, selalu kembalikan titik tengah Medan
+    return [3.5952, 98.6722]; 
 };
 
 const defaultZonaIcon = new L.Icon.Default();
@@ -263,8 +268,9 @@ const AdminDashboardPage = () => {
                                     //         ))}
                                     // </MapContainer>
                                     <MapContainer
+
                                         center={mapCenter}
-                                        zoom={7}
+                                        zoom={9}
                                         style={{ height: "100%", width: "100%" }}
                                     >
                                         {/* <ZonaClickHandler
