@@ -75,7 +75,7 @@ const assignPanicToOfficerTx = async ({ panicId, officerId, officerName }) => {
             return { ok: false, code: 409, message: "Panic sudah diambil / tidak OPEN" };
         }
 
-        // ✅ SET PANIC ASSIGNED
+        //  SET PANIC ASSIGNED
         await conn.execute(
             `UPDATE panic_events
        SET status='ASSIGNED',
@@ -86,7 +86,7 @@ const assignPanicToOfficerTx = async ({ panicId, officerId, officerName }) => {
             [officerId, officerName, panicId]
         );
 
-        // ✅ SET OFFICER BUSY (kunci: supaya dia gak dapat panic lain)
+        //  SET OFFICER BUSY (kunci: supaya dia gak dapat panic lain)
         await conn.execute(
             `UPDATE officer_live
        SET is_busy = 1,
