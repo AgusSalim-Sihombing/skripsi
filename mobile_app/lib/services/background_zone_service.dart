@@ -260,7 +260,7 @@ class BackgroundZoneService {
     Future<void> handlePosition(Position pos) async {
       if (stopped) return;
 
-      // kirim ke UI biar keliatan update real-time
+      // kirim biar keliatan update real-time
       service.invoke('bg:loc', {
         'lat': pos.latitude,
         'lng': pos.longitude,
